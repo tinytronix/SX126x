@@ -1,0 +1,4 @@
+# Schlüsselwörter für Datentypen:
+SX126x KEYWORD1
+# Schlüsselwörter für Methoden: KEYWORD2
+begin KEYWORD2
