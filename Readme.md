@@ -1,6 +1,8 @@
 # SX126x
 Arduino library for LoRa Communication using SX126x.
-Tested with LoRa module DRF1268T (http://www.dorji.com).
+Tested with LoRa module DRF1268T (http://www.dorji.com), as well usable for DRF1262T.
+
+FSK Mode is currently not supported.
 
 For installing the library into your Arduino IDE please refer to the offical Arduino howto.
 The first place to start may be the examples folder. There is a simple rx tx example
