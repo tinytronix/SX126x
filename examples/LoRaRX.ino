@@ -2,9 +2,9 @@
 #include <SX126x.h>
 
 #define RF_FREQUENCY                                433000000 // Hz  center frequency
-#define TX_OUTPUT_POWER                             22        // dBm tx output power
+#define TX_OUTPUT_POWER                             -3        // dBm tx output power
 #define LORA_BANDWIDTH                              4         // bandwidth=125khz  0:250kHZ,1:125kHZ,2:62kHZ,3:20kHZ.... look for radio line 392                                                               
-#define LORA_SPREADING_FACTOR                       7        // spreading factor=11 [SF5..SF12]
+#define LORA_SPREADING_FACTOR                       7         // spreading factor=11 [SF5..SF12]
 #define LORA_CODINGRATE                             4         // [1: 4/5,
                                                               //  2: 4/6,
                                                               //  3: 4/7,
@@ -33,8 +33,8 @@ void setup()
   delay(500);
   
   lora.begin(SX126X_PACKET_TYPE_LORA,   //LoRa or FSK, FSK currently not supported
-             433000000,                 //frequency in Hz
-             -3);                       //tx power in dBm
+             RF_FREQUENCY,              //frequency in Hz
+             TX_OUTPUT_POWER);          //tx power in dBm
 
   lora.LoRaConfig(LORA_SPREADING_FACTOR, 
                   LORA_BANDWIDTH, 
