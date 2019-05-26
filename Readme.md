@@ -4,11 +4,13 @@ Tested with LoRa module DRF1268T (http://www.dorji.com), as well usable for DRF1
 
 FSK Mode is currently not supported.
 
-For installing the library into your Arduino IDE please refer to the offical Arduino howto.
-The first place to start may be the examples folder. There is a simple rx tx example
-which sends and receives numbers.
+#Installing
+Download this repo as zip. Then in the Arduino IDE go to Sketch->Add library->add .zip library.
+Or please refer to the offical Arduino howto.
 
-The examle works with the attached schematic. It is designed to enhance my bunch of homeautomation devices (https://github.com/tinytronix/homeautomation).
-It will bridge I2C commands from inside the house to some modules installed outside for controlling
-the plant watering in the garden. There is also the plan to build several little modules which can be 
-placed behind wall power outlets or wall switches.
+#First Steps
+The first place to start may be the examples folder. There is a simple rx tx example
+which sends data (TX) and echos them back (rx). 
+
+#Hardware
+The examle works with the attached schematic. It is designed to enhance my bunch of homeautomation devices (https://github.com/tinytronix/homeautomation). 
