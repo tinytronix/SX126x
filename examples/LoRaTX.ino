@@ -27,7 +27,6 @@ bool b = false;
 
 void setup() 
 {
-  // put your setup code here, to run once:
   Serial.begin(9600);
   
   delay(500);
@@ -35,9 +34,7 @@ void setup()
   lora.begin(SX126X_PACKET_TYPE_LORA,   //LoRa or FSK, FSK currently not supported
              RF_FREQUENCY,              //frequency in Hz
              TX_OUTPUT_POWER);          //tx power in dBm
-
-
-                 
+             
   lora.LoRaConfig(LORA_SPREADING_FACTOR, 
                     LORA_BANDWIDTH, 
                     LORA_CODINGRATE, 
@@ -56,6 +53,7 @@ uint32_t errors = 0;
 int count = 0;
 unsigned long start;
 
+//send data and await echo
 void loop() 
 {
   if ( b == false )
