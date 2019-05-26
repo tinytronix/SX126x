@@ -350,7 +350,7 @@ class SX126x {
     int16_t begin(uint8_t packetType, uint32_t frequencyInHz, int8_t txPowerInDbm);
     int16_t LoRaConfig(uint8_t spreadingFactor, uint8_t bandwidth, uint8_t codingRate, uint16_t preambleLength, uint8_t payloadLen, bool crcOn, bool invertIrq);
     uint8_t Receive(uint8_t *pData, uint16_t len);
-    void    Send(uint8_t *pData, uint8_t len);
+    bool    Send(uint8_t *pData, uint8_t len, bool rxModeAfterTx);
     void    ReceiveStatus(uint8_t *rssiPacket, uint8_t *snrPacket);
 
   private:

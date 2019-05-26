@@ -26,7 +26,7 @@ int16_t SX126x::begin(uint8_t packetType, uint32_t frequencyInHz, int8_t txPower
     txPowerInDbm = -3;
   
   Reset();
-
+  
   if ( 0x2A != GetStatus() )
   {
     //Serial.println("SX126x error, maybe no SPI connection?");
@@ -53,7 +53,10 @@ int16_t SX126x::begin(uint8_t packetType, uint32_t frequencyInHz, int8_t txPower
   SetPaConfig(0x04, 0x07, 0x00, 0x01);
   //SX126xSetOvercurrentProtection(0x38);  // current max 160mA for the whole device
   SetPowerConfig(txPowerInDbm, SX126X_PA_RAMP_200U); //0 fuer Empfaenger
-  SetDioIrqParams(0xFFFF, 0xFFFF, SX126X_IRQ_NONE, SX126X_IRQ_NONE);
+  SetDioIrqParams(SX126X_IRQ_ALL,  //all interrupts enabled
+                  (SX126X_IRQ_RX_DONE | SX126X_IRQ_TX_DONE | SX126X_IRQ_TIMEOUT), //interrupts on DIO1
+                  SX126X_IRQ_NONE,  //interrupts on DIO2
+                  SX126X_IRQ_NONE); //interrupts on DIO3
 
   SetRfFrequency(frequencyInHz);
 }
@@ -93,7 +96,10 @@ int16_t SX126x::LoRaConfig(uint8_t spreadingFactor, uint8_t bandwidth, uint8_t c
     PacketParams[5] = 0x00;
 
   SPIwriteCommand(SX126X_CMD_SET_PACKET_PARAMS, PacketParams, 6);
-  SetDioIrqParams(0xFFFF, 0xFFFF, SX126X_IRQ_NONE, SX126X_IRQ_NONE);
+  SetDioIrqParams(SX126X_IRQ_ALL,  //all interrupts enabled
+                  (SX126X_IRQ_RX_DONE | SX126X_IRQ_TX_DONE, SX126X_IRQ_TIMEOUT), //interrupts on DIO1
+                  SX126X_IRQ_NONE,  //interrupts on DIO2
+                  SX126X_IRQ_NONE);
   //receive state no receive timeoout
   SetRx(0xFFFFFF);
 }
@@ -103,10 +109,10 @@ uint8_t SX126x::Receive(uint8_t *pData, uint16_t len)
 {
   uint8_t rxLen = 0;
   uint16_t irqRegs = GetIrqStatus();
-  ClearIrqStatus(0xFFFF);
-
+  
   if( irqRegs & SX126X_IRQ_RX_DONE )
   {
+    ClearIrqStatus(SX126X_IRQ_RX_DONE);
     ReadBuffer(pData, &rxLen, len);
   }
   
@@ -114,15 +120,33 @@ uint8_t SX126x::Receive(uint8_t *pData, uint16_t len)
 }
 
 
-void SX126x::Send(uint8_t *pData, uint8_t len)
+bool SX126x::Send(uint8_t *pData, uint8_t len, bool rxModeAfterTx)
 {
+  uint16_t irq;
   PacketParams[2] = 0x00; //Variable length packet (explicit header)
   PacketParams[3] = len;
   SPIwriteCommand(SX126X_CMD_SET_PACKET_PARAMS, PacketParams, 6);
-
-  WriteBuffer(pData, len);
   
-  SetTx(0);
+  ClearIrqStatus(SX126X_IRQ_TX_DONE | SX126X_IRQ_TIMEOUT);
+  
+  WriteBuffer(pData, len);
+  SetTx(50);
+  
+  irq = GetIrqStatus();
+  while ( !(irq & SX126X_IRQ_TX_DONE) )
+  {
+    irq = GetIrqStatus();
+  }
+  
+  if ( rxModeAfterTx )
+  {
+    SetRx(0xFFFFFF);
+  }
+  
+  if ( (irq & (SX126X_IRQ_TX_DONE | SX126X_IRQ_TIMEOUT) ) )
+    return false;
+  else
+    return true;
 }
 
 
