@@ -27,7 +27,6 @@ SX126x  lora(PD5, //SPI select
 
 void setup() 
 {
-  // put your setup code here, to run once:
   Serial.begin(9600);
   
   delay(500);
