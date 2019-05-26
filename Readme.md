@@ -13,10 +13,6 @@ Or please refer to the offical Arduino howto.
 The first place to start may be the examples folder. There is a simple rx tx example
 which sends data (TX) and echos them back (rx). 
 
-## Hardware
-The examle works with the attached schematic. 
-
-## Compatible
-This library was tested with LoRa module DRF1268T (http://www.dorji.com), as well usable for DRF1262T.
-Please see the attached schematic for wiring. 
+## Hardware compatibility
+The examle works with the attached schematic. This library was tested with LoRa module DRF1268T (http://www.dorji.com), as well usable for DRF1262T. Please see the attached schematic for wiring. 
 
