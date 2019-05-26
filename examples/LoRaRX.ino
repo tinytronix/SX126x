@@ -47,6 +47,7 @@ void setup()
 
 }
 
+//receive and echo back
 void loop() 
 {
   uint8_t rxLen = lora.Receive(pRxData, 128);
