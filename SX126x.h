@@ -1,13 +1,6 @@
 #ifndef _SX126X_H
 #define _SX126X_H
 
-//board specific
-#define SX126x_SPI_SELECT PD5
-#define SX126x_RESET      PD6
-#define SX126x_BUSY       PD7
-#define SX126x_INT0       PB0 //DIO1 
-#define SX126x_SW         PB1
-
 //return values
 #define ERR_NONE                        0
 #define ERR_PACKET_TOO_LONG             1
@@ -345,7 +338,7 @@
 // common low-level SPI interface
 class SX126x {
   public:
-    SX126x();
+    SX126x(int spiSelect, int reset, int busy, int interrupt);
 
     int16_t begin(uint8_t packetType, uint32_t frequencyInHz, int8_t txPowerInDbm);
     int16_t LoRaConfig(uint8_t spreadingFactor, uint8_t bandwidth, uint8_t codingRate, uint16_t preambleLength, uint8_t payloadLen, bool crcOn, bool invertIrq);
@@ -353,7 +346,14 @@ class SX126x {
     bool    Send(uint8_t *pData, uint8_t len, bool rxModeAfterTx);
     void    ReceiveStatus(uint8_t *rssiPacket, uint8_t *snrPacket);
 
-  private:
+  private:    
+    uint8_t PacketParams[6];
+
+    int     SX126x_SPI_SELECT;
+    int     SX126x_RESET;
+    int     SX126x_BUSY;
+    int     SX126x_INT0;
+
     void    SPIwriteCommand(uint8_t cmd, uint8_t* data, uint8_t numBytes, bool waitForBusy = true);
     void    SPIreadCommand(uint8_t cmd, uint8_t* data, uint8_t numBytes, bool waitForBusy = true);
     void    SPItransfer(uint8_t cmd, bool write, uint8_t* dataOut, uint8_t* dataIn, uint8_t numBytes, bool waitForBusy);

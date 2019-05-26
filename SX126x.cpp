@@ -3,22 +3,26 @@
 #include "SX126x.h"
 
 
-uint8_t MaxPayloadLength = 0;
-uint8_t PacketParams[6];
 
-SX126x::SX126x(void)
+SX126x::SX126x(int spiSelect, int reset, int busy, int interrupt)
 {
+  SX126x_SPI_SELECT = spiSelect;
+  SX126x_RESET      = reset;
+  SX126x_BUSY       = busy;
+  SX126x_INT0       = interrupt;
+
+  pinMode(SX126x_SPI_SELECT, OUTPUT);
+  pinMode(SX126x_RESET, OUTPUT);
+  pinMode(SX126x_BUSY, INPUT);
+  pinMode(SX126x_INT0, INPUT);
+
   SPI.begin();
 }
 
 int16_t SX126x::begin(uint8_t packetType, uint32_t frequencyInHz, int8_t txPowerInDbm) 
 {
   
-  pinMode(SX126x_SPI_SELECT, OUTPUT);
-  pinMode(SX126x_RESET, OUTPUT);
-  pinMode(SX126x_SW, INPUT);  //normalerweise Output aber auf der Schaltung fest auf 3,3V gelegt
-  pinMode(SX126x_BUSY, INPUT);
-  pinMode(SX126x_INT0, INPUT);
+  
 
   if ( txPowerInDbm > 22 )
     txPowerInDbm = 22;
