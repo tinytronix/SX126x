@@ -21,9 +21,6 @@ SX126x::SX126x(int spiSelect, int reset, int busy, int interrupt)
 
 int16_t SX126x::begin(uint8_t packetType, uint32_t frequencyInHz, int8_t txPowerInDbm) 
 {
-  
-  
-
   if ( txPowerInDbm > 22 )
     txPowerInDbm = 22;
   if ( txPowerInDbm < -3 )
