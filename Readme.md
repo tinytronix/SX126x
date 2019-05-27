@@ -14,6 +14,6 @@ The first place to start may be the examples folder. There is a simple rx tx exa
 which sends data (TX) and echos them back (rx). 
 
 ## Hardware compatibility
-The examle works with the attached schematic. This library was tested with LoRa module DRF1268T (http://www.dorji.com), and is as well usable for DRF1262T. Please see the attached schematic for wiring. The library should be able to handle other
-LoRa modules as long as they use the SX1262 or SX1268. In this case check if DIO1, DIO2 and DIO3 are wired differently.
+This library was tested with LoRa module DRF1268T (http://www.dorji.com) and works with the attached schematic.  It is as well usable for DRF1262T. Please see the attached schematic for wiring. The library should be able to handle other
+LoRa modules as long as they use the SX1262 or SX1268. In this case take a look at the DRF1268T datasheet and check if DIO1, DIO2 and DIO3 are wired differently.
 
