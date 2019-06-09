@@ -19,5 +19,5 @@ LoRa modules as long as they use the SX1262 or SX1268. In this case take a look 
 
 ## FAQ
 Q: Why is the SW pin not supported by this library? <br>
-A: Currently the SW Pin is connected to 3,3V permanently, so RF is always on. In one of the next versions it mightbe a good idea to add a 5th parameter to the constructor (bool true/false): true- DIO2 switches RF, false: RF controlled externally.
+A: Currently (in my hardware setup) the SW Pin is connected to 3,3V permanently, so RF is always on. In one of the next versions it might be a good idea to add a 5th parameter to the constructor (bool true/false): true- DIO2 switches RF, false: RF controlled externally.
 
