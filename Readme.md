@@ -17,3 +17,7 @@ which sends data (TX) and echos them back (rx).
 This library was tested with LoRa module DRF1268T (http://www.dorji.com) and works with the attached schematic.  It is as well usable for DRF1262T. Please see the attached schematic for wiring. The library should be able to handle other
 LoRa modules as long as they use the SX1262 or SX1268. In this case take a look at the DRF1268T datasheet and check if DIO1, DIO2 and DIO3 are wired differently.
 
+## FAQ
+Q: Why is the SW pin not supported by this library?
+A: Currently the SW Pin is connected to 3,3V permanently, so RF is always on. In one of the next versions it mightbe a good idea to add a 5th parameter to the constructor (bool true/false): true- DIO2 switches RF, false: RF controlled externally.
+
