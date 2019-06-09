@@ -5,6 +5,8 @@ to be able to speak LoRa.
 
 FSK Mode is currently not supported in this lib.
 
+Here is my homeautomation gateway running with this Adruino driver library:
+![lt](https://raw.githubusercontent.com/tinytronix/SX126x/master/pcb/LoRa2.JPG)
 ## Installing
 Download this repo as zip. Then in the Arduino IDE go to Sketch->Add library->add .zip library.
 Or please refer to the offical Arduino howto.
@@ -19,7 +21,7 @@ LoRa modules as long as they use the SX1262 or SX1268. In this case take a look 
 
 ## FAQ
 Q: Why is the SW pin not supported by this library? <br>
-A: Currently (in my hardware setup) the SW Pin is connected to 3,3V permanently, so RF is always on. In one of the next versions it might be a good idea to add a 5th parameter to the constructor (bool true/false) in order to let the SX126x DIO2 output control te RF switch. 5th Param TRUE: DIO2 switches RF, 5th Param FALSE: RF controlled externally. See SX126x datasheet, section "SetDio2AsRfSwitchCtrl" for details.<br><br>
+A: Currently (in my hardware setup) the SW Pin is connected to 3,3V permanently, so RF is always on. In one of the next versions it might be a good idea to add a 5th parameter to the constructor (bool true/false) in order to let the SX126x DIO2 output control the RF switch. 5th Param TRUE: DIO2 switches RF, 5th Param FALSE: RF controlled externally. See SX126x datasheet, section "SetDio2AsRfSwitchCtrl" for details.<br><br>
 Q: Does the lib support interrupts? <br>
 A: No. Sending and receiving data will be handled in the arduino main loop.
 
