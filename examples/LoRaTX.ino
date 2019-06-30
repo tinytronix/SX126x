@@ -17,7 +17,11 @@
 #define LORA_PAYLOADLENGTH                          0         // 0: variable receive length 
                                                               // 1..255 payloadlength
 
-SX126x  lora;
+SX126x  lora(PD5,               //Port-Pin Output: SPI select
+             PD6,               //Port-Pin Output: Reset 
+             PD7,               //Port-Pin Input:  Busy
+             PB0                //Port-Pin Input:  Interrupt DIO1 
+             );
 
 
 void setup() 
@@ -46,7 +50,7 @@ uint8_t i;
 
 void loop() 
 {
-  lora.Send(&i, 1);
+  lora.Send(&i, 1,  SX126x_TXMODE_SYNC);
   i++;
   delay(1000);
 }

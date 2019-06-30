@@ -19,7 +19,12 @@
                                                               
 uint8_t* pRxData = new uint8_t[128];
 int16_t rv = 0;
-SX126x  lora;
+
+SX126x  lora(PD5,               //Port-Pin Output: SPI select
+             PD6,               //Port-Pin Output: Reset 
+             PD7,               //Port-Pin Input:  Busy
+             PB0                //Port-Pin Input:  Interrupt DIO1 
+             );
 
 void setup() 
 {
