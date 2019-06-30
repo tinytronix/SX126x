@@ -333,6 +333,9 @@
 #define SX126X_SYNC_WORD_PUBLIC                       0x3444
 #define SX126X_SYNC_WORD_PRIVATE                      0x1424
 
+#define SX126x_TXMODE_ASYNC                           0x01
+#define SX126x_TXMODE_SYNC                            0x02
+#define SX126x_TXMODE_BACK2RX                         0x04
 
 
 // common low-level SPI interface
@@ -343,11 +346,15 @@ class SX126x {
     int16_t begin(uint8_t packetType, uint32_t frequencyInHz, int8_t txPowerInDbm);
     int16_t LoRaConfig(uint8_t spreadingFactor, uint8_t bandwidth, uint8_t codingRate, uint16_t preambleLength, uint8_t payloadLen, bool crcOn, bool invertIrq);
     uint8_t Receive(uint8_t *pData, uint16_t len);
-    bool    Send(uint8_t *pData, uint8_t len, bool rxModeAfterTx);
+    bool    Send(uint8_t *pData, uint8_t len, uint8_t mode);
+    bool    ReceiveMode(void);
     void    ReceiveStatus(uint8_t *rssiPacket, uint8_t *snrPacket);
+    void    SetTxPower(int8_t txPowerInDbm);
+
 
   private:    
     uint8_t PacketParams[6];
+    bool    txActive;
 
     int     SX126x_SPI_SELECT;
     int     SX126x_RESET;
@@ -370,8 +377,8 @@ class SX126x {
     void    SetRegulatorMode(uint8_t mode);
     void    SetBufferBaseAddress(uint8_t txBaseAddress, uint8_t rxBaseAddress);
     void    SetPowerConfig(int8_t power, uint8_t rampTime);
-    void    SetPaConfig(uint8_t paDutyCycle, uint8_t hpMax, uint8_t deviceSel, uint8_t paLut);
     void    SetOvercurrentProtection(uint8_t value);
+    void    SetPaConfig(uint8_t paDutyCycle, uint8_t hpMax, uint8_t deviceSel, uint8_t paLut);
     void    SetDioIrqParams(uint16_t irqMask, uint16_t dio1Mask, uint16_t dio2Mask, uint16_t dio3Mask);
     void    SetStopRxTimerOnPreambleDetect(bool enable);
     void    SetLoRaSymbNumTimeout(uint8_t SymbNum);
