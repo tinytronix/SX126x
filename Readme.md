@@ -24,6 +24,7 @@ Q: Why is the SW pin not supported by this library? <br>
 A: Currently (in my hardware setup) the SW Pin is connected to 3,3V permanently, so RF is always on. In one of the next versions it might be a good idea to add a 5th parameter to the constructor (bool true/false) in order to let the SX126x DIO2 output control the RF switch. 5th Param TRUE: DIO2 switches RF, 5th Param FALSE: RF controlled externally. See SX126x datasheet, section "SetDio2AsRfSwitchCtrl" for details.<br><br>
 Q: Does the lib support interrupts? <br>
 A: No. Sending and receiving data will be handled in the arduino main loop.<br>
+<br>
 Q: Does the lib support LoRaWAN?<br>
 A: No. It is a bare metal driver for SX126xchipset. 
 
