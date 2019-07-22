@@ -53,8 +53,8 @@ int16_t SX126x::begin(uint8_t packetType, uint32_t frequencyInHz, int8_t txPower
   SetStandby(SX126X_STANDBY_RC); 
   SetRegulatorMode(SX126X_REGULATOR_DC_DC);
   SetBufferBaseAddress(0, 0);
-  SetPaConfig(0x04, 0x07, 0x00, 0x38);
-  SetOvercurrentProtection(0x0C);  // current max 30mA for the whole device
+  SetPaConfig(0x04, 0x07, 0x00, 0x01);
+  SetOvercurrentProtection(0x38);  // current max 30mA for the whole device
   SetPowerConfig(txPowerInDbm, SX126X_PA_RAMP_200U); //0 fuer Empfaenger
   SetDioIrqParams(SX126X_IRQ_ALL,  //all interrupts enabled
                   (SX126X_IRQ_RX_DONE | SX126X_IRQ_TX_DONE | SX126X_IRQ_TIMEOUT), //interrupts on DIO1
