@@ -3,7 +3,7 @@ This is an Arduino library for LoRa Communication using the radio transceiver ch
 I developed it because I want to extend my bunch of homeautomation devices (https://github.com/tinytronix/homeautomation). 
 to be able to speak LoRa. FSK Mode is currently not supported in this project.
 
-Most of the hardware driver software is taken from https://github.com/jgromes/RadioLib (Universal wireless communication library for Arduino, great project!).
+Most of the hardware driver software is taken from https://github.com/jgromes/RadioLib (Universal wireless communication library for Arduino, great project!) and slightly adapted.
 
 Here is my homeautomation gateway running with this Adruino driver library:
 ![lt](https://raw.githubusercontent.com/tinytronix/SX126x/master/pcb/LoRa2.JPG)
