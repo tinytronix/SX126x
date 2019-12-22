@@ -10,8 +10,7 @@ Download this repo as zip. Then in the Arduino IDE go to Sketch->Add library->ad
 Or please refer to the offical Arduino howto.
 
 ## First Steps
-The first place to start may be the examples folder. There is a simple rx tx example
-which sends data (TX) and echos them back (rx). 
+The first place to start may be the [examples](https://github.com/tinytronix/SX126x/tree/master/examples) folder. There is a simple rx tx example which sends data (TX) and echos them back (rx). 
 
 ## Hardware compatibility
 This library was tested with LoRa module DRF1268T (http://www.dorji.com) and works with the provided [schematic](https://github.com/tinytronix/homeautomation/blob/master/Hardware/LoraGateway/Schematic.pdf).  It is as well usable for DRF1262T. Please see the schematic for wiring. The library should be able to handle other
