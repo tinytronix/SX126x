@@ -1,7 +1,7 @@
 # SX126x
 This is an Arduino library for LoRa Communication using the radio transceiver chips [SX1268](https://www.semtech.com) and [SX1262](https://www.semtech.com).
 I developed it because I want to extend my bunch of [homeautomation devices](https://github.com/tinytronix/homeautomation). 
-to be able to speak LoRa. FSK Mode is currently not supported in this project.
+to be able to speak LoRa. 
 
 Most of the hardware driver software is taken from [RadioLib](https://github.com/jgromes/RadioLib) a universal wireless communication library for Arduino (great project!) and slightly adapted.
 
@@ -24,6 +24,9 @@ A: No. Sending and receiving data will be handled in the arduino main loop.<br>
 <br>
 Q: Does the lib support LoRaWAN?<br>
 A: No. It is a bare metal driver for SX126xchipset. 
+<br>
+Q: Is FSK Mode available.
+A: The SX126x chip implements FSK but it is not supported by this driver library.
 
 ## Hardware
 Here is my homeautomation gateway running with this Adruino driver library and [my LoRa communication protocol](https://github.com/tinytronix/LoRa):
