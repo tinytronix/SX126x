@@ -29,6 +29,6 @@ Q: Is FSK Mode available.<br>
 A: The SX126x chip implements FSK but it is not supported by this driver library.
 
 ## Hardware
-Here is my homeautomation gateway running with this Adruino driver library and [my LoRa communication protocol](https://github.com/tinytronix/LoRa):
+Here is my homeautomation gateway running with this Adruino driver library and [my peer-to-peer LoRa communication protocol](https://github.com/tinytronix/LoRa):
 ![lt](https://raw.githubusercontent.com/tinytronix/SX126x/master/pcb/LoRa2.JPG)
 
