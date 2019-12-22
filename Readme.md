@@ -3,7 +3,7 @@ This is an Arduino library for LoRa Communication using the radio transceiver ch
 I developed it because I want to extend my bunch of [homeautomation devices](https://github.com/tinytronix/homeautomation). 
 to be able to speak LoRa. FSK Mode is currently not supported in this project.
 
-Most of the hardware driver software is taken from [RadiLib](https://github.com/jgromes/RadioLib) a universal wireless communication library for Arduino (great project!) and slightly adapted.
+Most of the hardware driver software is taken from [RadioLib](https://github.com/jgromes/RadioLib) a universal wireless communication library for Arduino (great project!) and slightly adapted.
 
 ## Installing
 Download this repo as zip. Then in the Arduino IDE go to Sketch->Add library->add .zip library.
@@ -13,7 +13,7 @@ Or please refer to the offical Arduino howto.
 The first place to start may be the [examples](https://github.com/tinytronix/SX126x/tree/master/examples) folder. There is a simple rx tx example which sends data (TX) and echos them back (rx). 
 
 ## Hardware compatibility
-This library was tested with LoRa module DRF1268T (http://www.dorji.com) and works with the provided [schematic](https://github.com/tinytronix/homeautomation/blob/master/Hardware/LoraGateway/Schematic.pdf).  It is as well usable for DRF1262T. Please see the schematic for wiring. The library should be able to handle other
+This library was tested with LoRa module [DRF1268T](http://www.dorji.com) and works with the provided [schematic](https://github.com/tinytronix/homeautomation/blob/master/Hardware/LoraGateway/Schematic.pdf).  It is as well usable for DRF1262T. Please see the schematic for wiring. The library should be able to handle other
 LoRa modules as long as they use the SX1262 or SX1268. In this case take a look at the DRF1268T datasheet and check if DIO1, DIO2 and DIO3 are wired to different IO-Pins. You can easily change the used IO-Pins when calling the [constructor](https://github.com/tinytronix/SX126x/blob/master/examples/LoRaRX.ino).
 
 ## FAQ
