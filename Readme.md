@@ -1,5 +1,5 @@
 # SX126x
-This is an Arduino library for LoRa Communication using the radio transceiver chip [SX126x](https://www.semtech.com).
+This is an Arduino library for LoRa Communication using the radio transceiver chips [SX1268](https://www.semtech.com) and [SX1262](https://www.semtech.com).
 I developed it because I want to extend my bunch of [homeautomation devices](https://github.com/tinytronix/homeautomation). 
 to be able to speak LoRa. FSK Mode is currently not supported in this project.
 
