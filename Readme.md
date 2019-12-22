@@ -26,6 +26,6 @@ Q: Does the lib support LoRaWAN?<br>
 A: No. It is a bare metal driver for SX126xchipset. 
 
 ## Hardware
-Here is my homeautomation gateway running with this Adruino driver library:
+Here is my homeautomation gateway running with this Adruino driver library and [my LoRa communication protocol](https://github.com/tinytronix/LoRa):
 ![lt](https://raw.githubusercontent.com/tinytronix/SX126x/master/pcb/LoRa2.JPG)
 
