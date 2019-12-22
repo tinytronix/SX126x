@@ -14,8 +14,8 @@ The first place to start may be the examples folder. There is a simple rx tx exa
 which sends data (TX) and echos them back (rx). 
 
 ## Hardware compatibility
-This library was tested with LoRa module DRF1268T (http://www.dorji.com) and works with the privided [schematic](https://github.com/tinytronix/homeautomation/blob/master/Hardware/LoraGateway/Schematic.pdf).  It is as well usable for DRF1262T. Please see the attached schematic for wiring. The library should be able to handle other
-LoRa modules as long as they use the SX1262 or SX1268. In this case take a look at the DRF1268T datasheet and check if DIO1, DIO2 and DIO3 are wired differently.
+This library was tested with LoRa module DRF1268T (http://www.dorji.com) and works with the provided [schematic](https://github.com/tinytronix/homeautomation/blob/master/Hardware/LoraGateway/Schematic.pdf).  It is as well usable for DRF1262T. Please see the schematic for wiring. The library should be able to handle other
+LoRa modules as long as they use the SX1262 or SX1268. In this case take a look at the DRF1268T datasheet and check if DIO1, DIO2 and DIO3 are wired to different IO-Pins. You can easily change the used IO-Pins when calling the [constructor](https://github.com/tinytronix/SX126x/blob/master/examples/LoRaRX.ino).
 
 ## FAQ
 Q: Why is the SW pin not supported by this library? <br>
