@@ -23,7 +23,7 @@ Q: Does the lib support interrupts? <br>
 A: No. Sending and receiving data will be handled in the arduino main loop.<br>
 <br>
 Q: Does the lib support LoRaWAN?<br>
-A: No. It is a bare metal driver for SX126xchipset. 
+A: No. It is a bare metal driver for SX126xchipset. <br> 
 <br> 
 Q: Is FSK Mode available.<br>
 A: The SX126x chip implements FSK but it is not supported by this driver library.
