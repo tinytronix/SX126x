@@ -5,9 +5,6 @@ to be able to speak LoRa. FSK Mode is currently not supported in this project.
 
 Most of the hardware driver software is taken from https://github.com/jgromes/RadioLib (Universal wireless communication library for Arduino, great project!) and slightly adapted.
 
-Here is my homeautomation gateway running with this Adruino driver library:
-![lt](https://raw.githubusercontent.com/tinytronix/SX126x/master/pcb/LoRa2.JPG)
-## Installing
 Download this repo as zip. Then in the Arduino IDE go to Sketch->Add library->add .zip library.
 Or please refer to the offical Arduino howto.
 
@@ -28,4 +25,7 @@ A: No. Sending and receiving data will be handled in the arduino main loop.<br>
 Q: Does the lib support LoRaWAN?<br>
 A: No. It is a bare metal driver for SX126xchipset. 
 
-
+## Hardware
+Here is my homeautomation gateway running with this Adruino driver library:
+![lt](https://raw.githubusercontent.com/tinytronix/SX126x/master/pcb/LoRa2.JPG)
+## Installing
