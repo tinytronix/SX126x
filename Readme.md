@@ -5,6 +5,7 @@ to be able to speak LoRa. FSK Mode is currently not supported in this project.
 
 Most of the hardware driver software is taken from https://github.com/jgromes/RadioLib (Universal wireless communication library for Arduino, great project!) and slightly adapted.
 
+## Installing
 Download this repo as zip. Then in the Arduino IDE go to Sketch->Add library->add .zip library.
 Or please refer to the offical Arduino howto.
 
@@ -13,7 +14,7 @@ The first place to start may be the examples folder. There is a simple rx tx exa
 which sends data (TX) and echos them back (rx). 
 
 ## Hardware compatibility
-This library was tested with LoRa module DRF1268T (http://www.dorji.com) and works with the attached schematic.  It is as well usable for DRF1262T. Please see the attached schematic for wiring. The library should be able to handle other
+This library was tested with LoRa module DRF1268T (http://www.dorji.com) and works with the privided [schematic](https://github.com/tinytronix/homeautomation/blob/master/Hardware/LoraGateway/Schematic.pdf).  It is as well usable for DRF1262T. Please see the attached schematic for wiring. The library should be able to handle other
 LoRa modules as long as they use the SX1262 or SX1268. In this case take a look at the DRF1268T datasheet and check if DIO1, DIO2 and DIO3 are wired differently.
 
 ## FAQ
@@ -28,4 +29,4 @@ A: No. It is a bare metal driver for SX126xchipset.
 ## Hardware
 Here is my homeautomation gateway running with this Adruino driver library:
 ![lt](https://raw.githubusercontent.com/tinytronix/SX126x/master/pcb/LoRa2.JPG)
-## Installing
+
