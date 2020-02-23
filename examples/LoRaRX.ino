@@ -61,5 +61,5 @@ void loop()
     Serial.print("rssi: ");
     Serial.println(rssi, DEC);
   }
-  delay(1000);
+  delay(500);
 }
