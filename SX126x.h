@@ -351,12 +351,10 @@ class SX126x {
 
     int16_t   begin(uint8_t packetType, uint32_t frequencyInHz, int8_t txPowerInDbm);
     int16_t   LoRaConfig(uint8_t spreadingFactor, uint8_t bandwidth, uint8_t codingRate, uint16_t preambleLength, uint8_t payloadLen, bool crcOn, bool invertIrq);
-    uint16_t  GetIrqStatus(void);
-    uint8_t   GetStatus(void);
     uint8_t   Receive(uint8_t *pData, uint16_t len);
     uint8_t   Send(uint8_t *pData, uint8_t len, uint32_t timeoutInMs = 0);
     uint8_t   SendAsync(uint8_t *pData, uint8_t len, uint32_t timeoutInMs = 0);
-    void      ClearIrqStatus(uint16_t irq);
+    uint8_t   GetCurrentMode(void);
     bool      ReceiveMode(void);
     void      ReceiveStatus(int8_t *rssiPacket, int8_t *snrPacket);
     void      SetTxPower(int8_t txPowerInDbm);
@@ -367,42 +365,43 @@ class SX126x {
     static    SPISettings SX126X_SPI_SETTINGS;
     volatile  bool        txActive;
 
-    uint8_t PacketParams[6];
+    uint8_t   PacketParams[6];
 
-    int     SX126x_SPI_SELECT;
-    int     SX126x_RESET;
-    int     SX126x_BUSY;
+    int       SX126x_SPI_SELECT;
+    int       SX126x_RESET;
+    int       SX126x_BUSY;
 
-    void    SPIwriteCommand(uint8_t cmd, uint8_t* data, uint8_t numBytes, bool waitForBusy = true);
-    void    SPIreadCommand(uint8_t cmd, uint8_t* data, uint8_t numBytes, bool waitForBusy = true);
-    void    SPItransfer(uint8_t cmd, bool write, uint8_t* dataOut, uint8_t* dataIn, uint8_t numBytes, bool waitForBusy);
+    void      SPIwriteCommand(uint8_t cmd, uint8_t* data, uint8_t numBytes, bool waitForBusy = true);
+    void      SPIreadCommand(uint8_t cmd, uint8_t* data, uint8_t numBytes, bool waitForBusy = true);
+    void      SPItransfer(uint8_t cmd, bool write, uint8_t* dataOut, uint8_t* dataIn, uint8_t numBytes, bool waitForBusy);
 
-    void    SetDio3AsTcxoCtrl(uint8_t tcxoVoltage, uint32_t timeout);
-    void    SetDio2AsRfSwitchCtrl(uint8_t enable);
-    void    Reset(void);
-    void    SetStandby(uint8_t mode);
-    void    WaitOnBusy(void);
-    void    SetRfFrequency(uint32_t frequency);
-    void    Calibrate(uint8_t calibParam);
-    void    CalibrateImage(uint32_t frequency);
-    void    SetRegulatorMode(uint8_t mode);
-    void    SetBufferBaseAddress(uint8_t txBaseAddress, uint8_t rxBaseAddress);
-    void    SetPowerConfig(int8_t power, uint8_t rampTime);
-    void    SetOvercurrentProtection(uint8_t value);
-    void    SetPaConfig(uint8_t paDutyCycle, uint8_t hpMax, uint8_t deviceSel, uint8_t paLut);
-    void    SetDioIrqParams(uint16_t irqMask, uint16_t dio1Mask, uint16_t dio2Mask, uint16_t dio3Mask);
-    void    SetStopRxTimerOnPreambleDetect(bool enable);
-    void    SetLoRaSymbNumTimeout(uint8_t SymbNum);
-    void    SetPacketType(uint8_t packetType);
-    void    SetModulationParams(uint8_t spreadingFactor, uint8_t bandwidth, uint8_t codingRate, uint8_t lowDataRateOptimize);
-    //uint16_t GetIrqStatus(void);
-    //void    ClearIrqStatus(uint16_t irq);
-    void    SetRx(uint32_t timeout);
-    void    SetTx(uint32_t timeoutInMs);
-    void    GetRxBufferStatus(uint8_t *payloadLength, uint8_t *rxStartBufferPointer);
-    void    Wakeup(void);
-    uint8_t ReadBuffer(uint8_t *rxData, uint8_t *rxDataLen,  uint8_t maxLen);
-    uint8_t WriteBuffer(uint8_t *txData, uint8_t txDataLen);
+    void      SetDio3AsTcxoCtrl(uint8_t tcxoVoltage, uint32_t timeout);
+    void      SetDio2AsRfSwitchCtrl(uint8_t enable);
+    void      Reset(void);
+    void      SetStandby(uint8_t mode);
+    void      WaitOnBusy(void);
+    void      SetRfFrequency(uint32_t frequency);
+    void      Calibrate(uint8_t calibParam);
+    void      CalibrateImage(uint32_t frequency);
+    void      SetRegulatorMode(uint8_t mode);
+    void      SetBufferBaseAddress(uint8_t txBaseAddress, uint8_t rxBaseAddress);
+    void      SetPowerConfig(int8_t power, uint8_t rampTime);
+    void      SetOvercurrentProtection(uint8_t value);
+    void      SetPaConfig(uint8_t paDutyCycle, uint8_t hpMax, uint8_t deviceSel, uint8_t paLut);
+    void      SetDioIrqParams(uint16_t irqMask, uint16_t dio1Mask, uint16_t dio2Mask, uint16_t dio3Mask);
+    void      SetStopRxTimerOnPreambleDetect(bool enable);
+    void      SetLoRaSymbNumTimeout(uint8_t SymbNum);
+    void      SetPacketType(uint8_t packetType);
+    void      SetModulationParams(uint8_t spreadingFactor, uint8_t bandwidth, uint8_t codingRate, uint8_t lowDataRateOptimize);
+    uint16_t  GetIrqStatus(void);
+    void      ClearIrqStatus(uint16_t irq);
+    void      SetRx(uint32_t timeout);
+    void      SetTx(uint32_t timeoutInMs);
+    void      GetRxBufferStatus(uint8_t *payloadLength, uint8_t *rxStartBufferPointer);
+    void      Wakeup(void);
+    uint8_t   GetStatus(void);
+    uint8_t   ReadBuffer(uint8_t *rxData, uint8_t *rxDataLen,  uint8_t maxLen);
+    uint8_t   WriteBuffer(uint8_t *txData, uint8_t txDataLen);
 };
 
 #endif

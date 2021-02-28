@@ -171,6 +171,10 @@ bool SX126x::ReceiveMode(void)
 
   if ( txActive == false )
   {
+    uint8_t currentMode = GetCurrentMode();
+    if ( !currentMode & SX126X_STATUS_MODE_RX ) {
+      SetRx(SX126X_RX_NO_TIMEOUT_CONT);
+    }
     rv = true;
   }
   else
@@ -228,6 +232,11 @@ void SX126x::Dio1Interrupt()
 }
 
 
+uint8_t GetCurrentMode(void) {
+  return GetStatus() & 0x70;
+}
+
+
 //----------------------------------------------------------------------------------------------------------------------------
 //  The command SetStandby(...) is used to set the device in a configuration mode which is at an intermediate level of
 //  consumption. In this mode, the chip is placed in halt mode waiting for instructions via SPI. This mode is dedicated to chip
@@ -261,10 +270,10 @@ void SX126x::SetStandby(uint8_t mode)
 //  none
 //
 //  Return value:
-//  Bit 6:4 Chipmode:0x0: Unused
+//  Bit 7: unused
+//  Bit 6:4 Chipmode
 //  Bit 3:1 Command Status
 //  Bit 0: unused
-//  Bit 7: unused
 //----------------------------------------------------------------------------------------------------------------------------
 uint8_t SX126x::GetStatus(void)
 {
