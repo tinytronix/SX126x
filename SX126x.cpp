@@ -232,7 +232,7 @@ void SX126x::Dio1Interrupt()
 }
 
 
-uint8_t GetCurrentMode(void) {
+uint8_t SX126x::GetCurrentMode(void) {
   return GetStatus() & 0x70;
 }
 
