@@ -349,7 +349,6 @@ class SX126x {
   public:
     SX126x(int spiSelect, int reset, int busy);
 
-    void      Dio1Hook(void (*function) (void));
     int16_t   begin(uint8_t packetType, uint32_t frequencyInHz, int8_t txPowerInDbm);
     int16_t   LoRaConfig(uint8_t spreadingFactor, uint8_t bandwidth, uint8_t codingRate, uint16_t preambleLength, uint8_t payloadLen, bool crcOn, bool invertIrq);
     uint16_t  GetIrqStatus(void);
