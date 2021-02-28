@@ -1,0 +1,8 @@
+# Schlüsselwörter für Datentypen:
+SX126x KEYWORD1
+# Schlüsselwörter für Methoden: KEYWORD2
+begin KEYWORD2
+LoRaConfig KEYWORD2
+Receive KEYWORD2
+Send KEYWORD2
+ReceiveStatus KEYWORD2

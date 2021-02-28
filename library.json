@@ -1,0 +1,20 @@
+{
+"name": "SX126x",
+"frameworks": "Arduino",
+"keywords": "SX1268, SX1262, DRF1268T, SX1262T",
+"description": "Implement a driver for LoRa chipset SX126x, tested with module DRF1268T",
+"authors":
+[
+    {
+        "name": "Frank.Engel",
+        "email": "frank.engel@gmx.de",
+        "url": "",
+        "maintainer": true
+    },
+],
+"repository":
+{
+    "type": "git",
+    "url": "https://github.com/tinytronix/DRF1268T"
+}
+}
