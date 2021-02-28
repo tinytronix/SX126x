@@ -2,26 +2,18 @@
 
 SPISettings SX126x::SX126X_SPI_SETTINGS(4000000, MSBFIRST, SPI_MODE0);
 
-SX126x::SX126x(int spiSelect, int reset, int busy, int interrupt)
+SX126x::SX126x(int spiSelect, int reset, int busy)
 {
   SX126x_SPI_SELECT = spiSelect;
   SX126x_RESET      = reset;
   SX126x_BUSY       = busy;
-  SX126x_INT        = interrupt;
-
   txActive          = false;
 
   pinMode(SX126x_SPI_SELECT, OUTPUT);
   pinMode(SX126x_RESET, OUTPUT);
   pinMode(SX126x_BUSY, INPUT);
-  pinMode(SX126x_INT, INPUT);
 
   SPI.begin();
-}
-
-void SX126x::Dio1Hook(void (*function)(void)) 
-{
-  __dio1Hook = function;
 }
 
 int16_t SX126x::begin(uint8_t packetType, uint32_t frequencyInHz, int8_t txPowerInDbm) 
@@ -32,9 +24,6 @@ int16_t SX126x::begin(uint8_t packetType, uint32_t frequencyInHz, int8_t txPower
     txPowerInDbm = -3;
   
   Reset();
-
-  // Used for completion of ASYNC TX
-  //attachInterrupt(digitalPinToInterrupt(SX126x_INT), (void (*)())(&this->Dio1Interrupt), RISING);
   
   if ( 0x2A != GetStatus() )
   {
@@ -126,27 +115,20 @@ uint8_t SX126x::Send(uint8_t *pData, uint8_t len, uint32_t timeoutInMs)
 {
   uint16_t irq;
   bool rv = ERR_UNKNOWN;
-  
-  if ( txActive == false )
+
+  rv = SendAsync(pData, len, timeoutInMs);
+
+  if ( rv == ERR_NONE ) 
   {
-	  rv = SendAsync(*pData, len, timeoutInMs);
+    while ( txActive ) {}
+    irq = GetIrqStatus();
 
-    if ( rv == ERR_NONE ) 
-    {
-      irq = GetIrqStatus();
-      while ( (!(irq & SX126X_IRQ_TX_DONE)) && (!(irq & SX126X_IRQ_TIMEOUT)) )
-      {
-        irq = GetIrqStatus();
-      }
-      txActive = false;
+    SetRx(SX126X_RX_NO_TIMEOUT_CONT);
 
-      SetRx(SX126X_RX_NO_TIMEOUT_CONT);
-
-      if ( irq & SX126X_IRQ_TIMEOUT ) {
-        rv = ERR_TX_TIMEOUT;
-      }
+    if ( irq & SX126X_IRQ_TIMEOUT ) {
+      rv = ERR_TX_TIMEOUT;
     }
-	}
+  }
 	
 	return rv;
 }
@@ -161,13 +143,11 @@ uint8_t SX126x::SendAsync(uint8_t *pData, uint8_t len, uint32_t timeoutInMs)
   
   bool rv = ERR_UNKNOWN;
 
-  if (txActive == true) {
+  if ( txActive ) {
     rv = ERR_DEVICE_BUSY;
   }
   else 
   {
-    txActive = true;
-
     ClearIrqStatus(SX126X_IRQ_ALL);
 	  
 	  PacketParams[3] = len;
@@ -175,7 +155,9 @@ uint8_t SX126x::SendAsync(uint8_t *pData, uint8_t len, uint32_t timeoutInMs)
 
     WriteBuffer(pData, len);
 	  SetTx(timeoutInMs);
+    
     rv = ERR_NONE;
+    txActive = true;
   }
 
   return rv;
@@ -234,17 +216,15 @@ void SX126x::Wakeup(void)
 }
 
 
-void SX126x::Dio1Interrupt(void) 
+void SX126x::Dio1Interrupt() 
 {
-  uint16_t irq = 0;
-  if (txActive) {
-    irq = GetIrqStatus();
+  uint16_t irq = GetIrqStatus();
+  if( txActive ) 
+  {
     if ( irq & (SX126X_IRQ_TX_DONE | SX126X_IRQ_TIMEOUT) ) {
       txActive = false;
     }
   }
-
-  __dio1Hook();
 }
 
 
@@ -761,10 +741,10 @@ void SX126x::SetTx(uint32_t timeoutInMs)
                   SX126X_IRQ_NONE); 							//interrupts on DIO3
 				  
     uint8_t buf[3];
-    uint32_t tout = (uint32_t)(timeoutInMs * 0.015625);
+    uint32_t tout = (uint32_t)(timeoutInMs / 0.015625);
     buf[0] = (uint8_t)((tout >> 16) & 0xFF);
     buf[1] = (uint8_t)((tout >> 8) & 0xFF);
-    buf[2] = (uint8_t )(tout & 0xFF);
+    buf[2] = (uint8_t) (tout & 0xFF);
     SPIwriteCommand(SX126X_CMD_SET_TX, buf, 3);
 }
 
@@ -889,7 +869,37 @@ void SX126x::SPItransfer(uint8_t cmd, bool write, uint8_t* dataOut, uint8_t* dat
   // start transfer
   digitalWrite(SX126x_SPI_SELECT, LOW);
   SPI.beginTransaction(SX126X_SPI_SETTINGS);
- }
+
+  // send command byte
+  SPI.transfer(cmd);
+
+  // send/receive all bytes
+  if(write) {
+    //Serial.print("SPI write: CMD=0x");
+    //Serial.print(cmd, HEX);
+    //Serial.print(" DataOut: ");
+    for(uint8_t n = 0; n < numBytes; n++) {
+      uint8_t in = SPI.transfer(dataOut[n]);
+      //Serial.print(dataOut[n], HEX);
+      //Serial.print(" ");
+    }
+    //Serial.println();
+  } else {
+    //Serial.print("SPI read:  CMD=0x");
+    //Serial.print(cmd, HEX);
+    // skip the first byte for read-type commands (status-only)
+    uint8_t in = SPI.transfer(SX126X_CMD_NOP);
+    ////Serial.println((SX126X_CMD_NOP, HEX));
+    //Serial.print(" DataIn: ");
+
+    for(uint8_t n = 0; n < numBytes; n++) {
+      dataIn[n] = SPI.transfer(SX126X_CMD_NOP);
+      ////Serial.println((SX126X_CMD_NOP, HEX));
+      //Serial.print(dataIn[n], HEX);
+      //Serial.print(" ");
+    }
+    //Serial.println();
+  }
 
   // stop transfer
   SPI.endTransaction();

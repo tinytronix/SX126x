@@ -343,10 +343,11 @@
 //DIO1 ISR HOOK
 static void (*__dio1Hook)(void);
 
+
 // interface class
 class SX126x {
   public:
-    SX126x(int spiSelect, int reset, int busy, int interrupt);
+    SX126x(int spiSelect, int reset, int busy);
 
     void      Dio1Hook(void (*function) (void));
     int16_t   begin(uint8_t packetType, uint32_t frequencyInHz, int8_t txPowerInDbm);
@@ -360,6 +361,7 @@ class SX126x {
     bool      ReceiveMode(void);
     void      ReceiveStatus(int8_t *rssiPacket, int8_t *snrPacket);
     void      SetTxPower(int8_t txPowerInDbm);
+    void      Dio1Interrupt(void);
 
 
   private:
@@ -371,9 +373,7 @@ class SX126x {
     int     SX126x_SPI_SELECT;
     int     SX126x_RESET;
     int     SX126x_BUSY;
-    int     SX126x_INT;
 
-    void    Dio1Interrupt(void);
     void    SPIwriteCommand(uint8_t cmd, uint8_t* data, uint8_t numBytes, bool waitForBusy = true);
     void    SPIreadCommand(uint8_t cmd, uint8_t* data, uint8_t numBytes, bool waitForBusy = true);
     void    SPItransfer(uint8_t cmd, bool write, uint8_t* dataOut, uint8_t* dataIn, uint8_t numBytes, bool waitForBusy);
@@ -405,6 +405,5 @@ class SX126x {
     uint8_t ReadBuffer(uint8_t *rxData, uint8_t *rxDataLen,  uint8_t maxLen);
     uint8_t WriteBuffer(uint8_t *txData, uint8_t txDataLen);
 };
-
 
 #endif
