@@ -819,7 +819,7 @@ uint8_t SX126x::ReadBuffer(uint8_t *rxData, uint8_t *rxDataLen, uint8_t maxLen)
     SPI.transfer(SX126X_CMD_READ_BUFFER);
     SPI.transfer(offset);
     SPI.transfer(SX126X_CMD_NOP);
-	uint8_t byte = 0;
+	  uint8_t byte = 0;
     for( uint16_t i = 0; i < *rxDataLen; i++ )
     {
         byte = SPI.transfer(SX126X_CMD_NOP);
@@ -889,37 +889,7 @@ void SX126x::SPItransfer(uint8_t cmd, bool write, uint8_t* dataOut, uint8_t* dat
   // start transfer
   digitalWrite(SX126x_SPI_SELECT, LOW);
   SPI.beginTransaction(SX126X_SPI_SETTINGS);
-
-  // send command byte
-  SPI.transfer(cmd);
-  
-  // send/receive all bytes
-  if(write) {
-    //Serial.print("SPI write: CMD=0x");
-    //Serial.print(cmd, HEX);
-    //Serial.print(" DataOut: ");
-    for(uint8_t n = 0; n < numBytes; n++) {
-      uint8_t in = SPI.transfer(dataOut[n]);
-      //Serial.print(dataOut[n], HEX);
-      //Serial.print(" ");
-    }
-    //Serial.println();
-  } else {
-    //Serial.print("SPI read:  CMD=0x");
-    //Serial.print(cmd, HEX);
-    // skip the first byte for read-type commands (status-only)
-    uint8_t in = SPI.transfer(SX126X_CMD_NOP);
-    ////Serial.println((SX126X_CMD_NOP, HEX));
-    //Serial.print(" DataIn: ");
-
-    for(uint8_t n = 0; n < numBytes; n++) {
-      dataIn[n] = SPI.transfer(SX126X_CMD_NOP);
-      ////Serial.println((SX126X_CMD_NOP, HEX));
-      //Serial.print(dataIn[n], HEX);
-      //Serial.print(" ");
-    }
-    //Serial.println();
-  }
+ }
 
   // stop transfer
   SPI.endTransaction();
