@@ -1,6 +1,6 @@
 #include "SX126x.h"
 
-SPISettings SX126x::SX126X_SPI_SETTINGS(4000000, MSBFIRST, SPI_MODE0);
+SPISettings SX126x::SX126X_SPI_SETTINGS(8000000, MSBFIRST, SPI_MODE0);
 
 SX126x::SX126x(int spiSelect, int reset, int busy)
 {
@@ -148,7 +148,7 @@ uint8_t SX126x::SendAsync(uint8_t *pData, uint8_t len, uint32_t timeoutInMs)
   }
   else 
   {
-    ClearIrqStatus(SX126X_IRQ_ALL);
+    ClearIrqStatus(SX126X_IRQ_TX_DONE | SX126X_IRQ_TIMEOUT);
 	  
 	  PacketParams[3] = len;
 	  SPIwriteCommand(SX126X_CMD_SET_PACKET_PARAMS, PacketParams, 6);
@@ -734,12 +734,7 @@ void SX126x::SetRx(uint32_t timeout)
 //  
 //----------------------------------------------------------------------------------------------------------------------------
 void SX126x::SetTx(uint32_t timeoutInMs)
-{
-	SetDioIrqParams(SX126X_IRQ_ALL,  							//all interrupts enabled
-                  (SX126X_IRQ_TX_DONE | SX126X_IRQ_TIMEOUT), 	//interrupts on DIO1
-                  SX126X_IRQ_NONE,  							//interrupts on DIO2
-                  SX126X_IRQ_NONE); 							//interrupts on DIO3
-				  
+{  
     uint8_t buf[3];
     uint32_t tout = (uint32_t)(timeoutInMs / 0.015625);
     buf[0] = (uint8_t)((tout >> 16) & 0xFF);
