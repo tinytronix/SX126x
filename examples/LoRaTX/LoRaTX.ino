@@ -1,56 +1,69 @@
-
 #include <SX126x.h>
 
-#define RF_FREQUENCY                                433000000 // Hz  center frequency
-#define TX_OUTPUT_POWER                             22        // dBm tx output power
-#define LORA_BANDWIDTH                              4         // bandwidth=125khz  0:250kHZ,1:125kHZ,2:62kHZ,3:20kHZ.... look for radio line 392                                                               
-#define LORA_SPREADING_FACTOR                       7        // spreading factor=11 [SF5..SF12]
-#define LORA_CODINGRATE                             1         // [1: 4/5,
-                                                              //  2: 4/6,
-                                                              //  3: 4/7,
-                                                              //  4: 4/8]
+#define RF_FREQUENCY                      915000000                 // Hz  center frequency
+#define TX_OUTPUT_POWER                   -3                        // dBm tx output power
+#define LORA_BANDWIDTH                    SX126X_LORA_BW_125_0      // Bandwidth
+#define LORA_SPREADING_FACTOR             8                         // spreading factor [SF5..SF12]
+#define LORA_CODINGRATE                   1                         // [1: 4/5, 2: 4/6, 3: 4/7, 4: 4/8]
+#define LORA_PREAMBLE_LENGTH              8                         // Same for Tx and Rx
+#define LORA_FIX_LENGTH_PAYLOAD_ON        false                     // variable data payload
+#define LORA_PACKET_CRC_ENABLE            false                     // check payload crc
+#define LORA_IQ_INVERSION_ON              false                     // use inverted IQ
+#define LORA_PAYLOADLENGTH                0                         // 0: variable receive length, 1..255 payloadlength
 
-#define LORA_PREAMBLE_LENGTH                        8         // Same for Tx and Rx
-#define LORA_SYMBOL_TIMEOUT                         0         // Symbols
-#define LORA_FIX_LENGTH_PAYLOAD_ON                  false     // variable data payload
-#define LORA_IQ_INVERSION_ON                        false
-#define LORA_PAYLOADLENGTH                          0         // 0: variable receive length 
-                                                              // 1..255 payloadlength
+// PINS
+#define LORA_SPI_SELECT                   10
+#define LORA_RESET                        9
+#define LORA_BUSY                         8
+#define LORA_DIO_1                        2
 
-SX126x  lora(PD5,               //Port-Pin Output: SPI select
-             PD6,               //Port-Pin Output: Reset 
-             PD7,               //Port-Pin Input:  Busy
-             PB0                //Port-Pin Input:  Interrupt DIO1 
-             );
+SX126x lora(LORA_SPI_SELECT,              //Port-Pin Output: SPI select
+            LORA_RESET,                   //Port-Pin Output: Reset 
+            LORA_BUSY);                   //Port-Pin Input:  Busy
 
-
-void setup() 
-{
-  // put your setup code here, to run once:
+void setup() {
+  pinMode(LORA_DIO_1, INPUT);
+  attachInterrupt(digitalPinToInterrupt(LORA_DIO_1), loraISR, RISING);
+  
   Serial.begin(9600);
-  
   delay(500);
+  Serial.println("Starting Up...");
 
-  lora.begin(SX126X_PACKET_TYPE_LORA,   //LoRa or FSK, FSK currently not supported
-             433000000,                 //frequency in Hz
-             -3);                       //tx power in dBm
+  uint8_t res = lora.ModuleConfig(SX126X_PACKET_TYPE_LORA, RF_FREQUENCY, TX_OUTPUT_POWER);
+
+  if ( res != ERR_NONE ) {
+    Serial.println("Error Initializing SX126x");
+    while(true) delay(10);
+  }
   
-  lora.LoRaConfig(LORA_SPREADING_FACTOR, 
-                    LORA_BANDWIDTH, 
-                    LORA_CODINGRATE, 
-                    LORA_PREAMBLE_LENGTH, 
-                    LORA_PAYLOADLENGTH, 
-                    false,              //crcOn  
-                    false);             //invertIrq
-   
+  lora.LoRaBegin(
+    LORA_SPREADING_FACTOR, 
+    LORA_BANDWIDTH, 
+    LORA_CODINGRATE, 
+    LORA_PREAMBLE_LENGTH, 
+    LORA_PAYLOADLENGTH, 
+    LORA_PACKET_CRC_ENABLE,
+    LORA_IQ_INVERSION_ON
+  );
 
+  Serial.println("SX126x Initialized");
 }
 
-uint8_t i;
+uint16_t i = 0;
+uint8_t* data = new uint8_t[2];
 
-void loop() 
-{
-  lora.Send(&i, 1,  SX126x_TXMODE_SYNC);
+void loop() {
+  data[0] = (i >> 8) & 0x00FF;
+  data[1] = i & 0x00FF;
+  unsigned long startMillis = millis();
+  uint8_t res = lora.Send(data, 2);
+  unsigned long sendTime = millis()-startMillis;
+  Serial.println("Sent: " + String(i) + " in " + String(sendTime) + "ms " + (res ? "with error(s)" : "successfully"));
   i++;
   delay(1000);
+}
+
+
+void loraISR() {
+  lora.Dio1Interrupt(); // Update the lora driver
 }
