@@ -11,10 +11,10 @@
 #define LORA_IQ_INVERSION_ON              false                     // use inverted IQ
 #define LORA_PAYLOADLENGTH                0                         // 0: variable receive length, 1..255 payloadlength
 
-// PINS
-#define LORA_SPI_SELECT                   48
-#define LORA_RESET                        49
-#define LORA_BUSY                         47
+// UNO PINS
+#define LORA_SPI_SELECT                   10
+#define LORA_RESET                        9
+#define LORA_BUSY                         8
 #define LORA_DIO_1                        2
 
 SX126x lora(LORA_SPI_SELECT,              //Port-Pin Output: SPI select

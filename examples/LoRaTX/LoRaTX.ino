@@ -11,7 +11,7 @@
 #define LORA_IQ_INVERSION_ON              false                     // use inverted IQ
 #define LORA_PAYLOADLENGTH                0                         // 0: variable receive length, 1..255 payloadlength
 
-// PINS
+// UNO PINS
 #define LORA_SPI_SELECT                   10
 #define LORA_RESET                        9
 #define LORA_BUSY                         8
