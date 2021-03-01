@@ -13,60 +13,59 @@ SX126x::SX126x(int spiSelect, int reset, int busy)
   pinMode(SX126x_RESET, OUTPUT);
   pinMode(SX126x_BUSY, INPUT);
 
+  digitalWrite(SX126x_RESET, HIGH);
+
   SPI.begin();
 }
 
-int16_t SX126x::begin(uint8_t packetType, uint32_t frequencyInHz, int8_t txPowerInDbm) 
+uint8_t SX126x::ModuleConfig(uint8_t packetType, uint32_t frequencyInHz, int8_t txPowerInDbm, uint8_t defaultMode) 
 {
   if ( txPowerInDbm > 22 )
     txPowerInDbm = 22;
   if ( txPowerInDbm < -3 )
     txPowerInDbm = -3;
+
+  DefaultMode = defaultMode;
   
   Reset();
-  
-  if ( 0x2A != GetStatus() )
-  {
-    Serial.println("SX126x: error, maybe no SPI connection?");
-    return ERR_INVALID_MODE;
-  }
   SetStandby(SX126X_STANDBY_RC);
   
-  SetDio3AsTcxoCtrl(SX126X_DIO3_OUTPUT_3_3, RADIO_TCXO_SETUP_TIME << 6); // convert from ms to SX126x time base
-  
-  Calibrate(  SX126X_CALIBRATE_IMAGE_ON
-                  | SX126X_CALIBRATE_ADC_BULK_P_ON
-                  | SX126X_CALIBRATE_ADC_BULK_N_ON
-                  | SX126X_CALIBRATE_ADC_PULSE_ON
-                  | SX126X_CALIBRATE_PLL_ON
-                  | SX126X_CALIBRATE_RC13M_ON
-                  | SX126X_CALIBRATE_RC64K_ON
-                  );
+  uint8_t currentMode = GetCurrentMode();
+  if ( currentMode != SX126X_STATUS_MODE_STDBY_RC )
+  {
+    Serial.println("SX126x: error, maybe no SPI connection?");
+    return (currentMode == 0) ? ERR_UNKNOWN : ERR_INVALID_MODE;
+  }
 
+  if ( packetType == SX126X_PACKET_TYPE_LORA) {
+    SetPacketType(SX126X_PACKET_TYPE_LORA); //RadioSetModem( ( SX126x.ModulationParams.PacketType == PACKET_TYPE_GFSK ) ? MODEM_FSK : MODEM_LORA );
+  }
+  else {
+    return ERR_UNSUPPORTED_MODE;
+  }
+
+  SetRegulatorMode(SX126X_REGULATOR_DC_DC);
   SetDio2AsRfSwitchCtrl(true);
+  SetDio3AsTcxoCtrl(SX126X_DIO3_OUTPUT_3_3, RADIO_TCXO_SETUP_TIME);
+  
+  Calibrate( SX126X_CALIBRATE_ALL_BLOCKS );
 
   SetStandby(SX126X_STANDBY_RC); 
-  SetRegulatorMode(SX126X_REGULATOR_DC_DC);
   SetBufferBaseAddress(0, 0);
   SetPaConfig(0x04, 0x07, 0x00, 0x01);
-  //SetOvercurrentProtection(0x38);  // current max 30mA for the whole device
-  SetPowerConfig(txPowerInDbm, SX126X_PA_RAMP_1700U); //0 fuer Empfaenger
-  SetDioIrqParams(SX126X_IRQ_ALL,  //all interrupts enabled
-                  (SX126X_IRQ_RX_DONE | SX126X_IRQ_TX_DONE | SX126X_IRQ_TIMEOUT), //interrupts on DIO1
-                  SX126X_IRQ_NONE,  //interrupts on DIO2
-                  SX126X_IRQ_NONE); //interrupts on DIO3
-
+  SetPowerConfig(txPowerInDbm, SX126X_PA_RAMP_1700U);
   SetRfFrequency(frequencyInHz);
+
+  return ERR_NONE;
 }
 
 
-int16_t SX126x::LoRaConfig(uint8_t spreadingFactor, uint8_t bandwidth, uint8_t codingRate, uint16_t preambleLength, uint8_t headerMode, bool crcOn, bool invertIrq) 
+uint8_t SX126x::LoRaBegin(uint8_t spreadingFactor, uint8_t bandwidth, uint8_t codingRate, uint16_t preambleLength, uint8_t headerMode, bool crcOn, bool invertIrq) 
 {
   uint8_t ldro = SX126X_LORA_LOW_DATA_RATE_OPTIMIZE_ON; //LowDataRateOptimize
 
   SetStopRxTimerOnPreambleDetect(false);
-  SetLoRaSymbNumTimeout(0); 
-  SetPacketType(SX126X_PACKET_TYPE_LORA); //RadioSetModem( ( SX126x.ModulationParams.PacketType == PACKET_TYPE_GFSK ) ? MODEM_FSK : MODEM_LORA );
+  SetLoRaSymbNumTimeout(0);
   SetModulationParams(spreadingFactor, bandwidth, codingRate, ldro);
   
   PacketParams[0] = (preambleLength >> 8) & 0xFF;
@@ -84,15 +83,15 @@ int16_t SX126x::LoRaConfig(uint8_t spreadingFactor, uint8_t bandwidth, uint8_t c
     PacketParams[5] = SX126X_LORA_IQ_INVERTED;
 
   SPIwriteCommand(SX126X_CMD_SET_PACKET_PARAMS, PacketParams, 6);
-  SetDioIrqParams(SX126X_IRQ_ALL,  //all interrupts enabled
-                  (SX126X_IRQ_RX_DONE | SX126X_IRQ_TX_DONE, SX126X_IRQ_TIMEOUT), //interrupts on DIO1
+  SetDioIrqParams(SX126X_IRQ_ALL,   //all interrupts enabled
+                  SX126X_IRQ_RX_DONE | SX126X_IRQ_TX_DONE | SX126X_IRQ_TIMEOUT, //interrupts on DIO1
                   SX126X_IRQ_NONE,  //interrupts on DIO2
-                  SX126X_IRQ_NONE);
+                  SX126X_IRQ_NONE); //interrupts on DIO3
 				  
   ClearIrqStatus(SX126X_IRQ_ALL);
 
-  // receive state no receive timeout
-  SetRx(SX126X_RX_NO_TIMEOUT_CONT);
+  // Enter the default mode of operation
+  EnterDefaultMode();
 }
 
 
@@ -103,7 +102,7 @@ uint8_t SX126x::Receive(uint8_t *pData, uint16_t len)
   
   if( irqRegs & SX126X_IRQ_RX_DONE )
   {
-    ClearIrqStatus(SX126X_IRQ_RX_DONE);
+    ClearIrqStatus(SX126X_IRQ_RX_DONE | SX126X_IRQ_TIMEOUT);
     ReadBuffer(pData, &rxLen, len);
   }
   
@@ -123,7 +122,7 @@ uint8_t SX126x::Send(uint8_t *pData, uint8_t len, uint32_t timeoutInMs)
     while ( txActive ) {}
     irq = GetIrqStatus();
 
-    SetRx(SX126X_RX_NO_TIMEOUT_CONT);
+    EnterDefaultMode();
 
     if ( irq & SX126X_IRQ_TIMEOUT ) {
       rv = ERR_TX_TIMEOUT;
@@ -136,11 +135,6 @@ uint8_t SX126x::Send(uint8_t *pData, uint8_t len, uint32_t timeoutInMs)
 
 uint8_t SX126x::SendAsync(uint8_t *pData, uint8_t len, uint32_t timeoutInMs) 
 {
-  SetDioIrqParams(SX126X_IRQ_ALL,  //all interrupts enabled
-                  SX126X_IRQ_TX_DONE | SX126X_IRQ_TIMEOUT, //interrupts on DIO1
-                  SX126X_IRQ_NONE,  //interrupts on DIO2
-                  SX126X_IRQ_NONE); //interrupts on DIO3
-  
   bool rv = ERR_UNKNOWN;
 
   if ( txActive ) {
@@ -164,28 +158,21 @@ uint8_t SX126x::SendAsync(uint8_t *pData, uint8_t len, uint32_t timeoutInMs)
 }
 
 
-bool SX126x::ReceiveMode(void)
+uint8_t SX126x::ReceiveMode(uint32_t timeoutInMs)
 {
-  uint16_t irq;
-  bool rv = false;
+  uint8_t rv = ERR_UNKNOWN;
 
-  if ( txActive == false )
+  if ( txActive == true )
   {
-    uint8_t currentMode = GetCurrentMode();
-    if ( !currentMode & SX126X_STATUS_MODE_RX ) {
-      SetRx(SX126X_RX_NO_TIMEOUT_CONT);
-    }
-    rv = true;
+    rv = ERR_DEVICE_BUSY;
   }
   else
   {
-    irq = GetIrqStatus();
-    if ( irq & (SX126X_IRQ_TX_DONE | SX126X_IRQ_TIMEOUT) )
-    { 
-      SetRx(SX126X_RX_NO_TIMEOUT_CONT);
-      txActive = false;
-      rv = true;
+    uint8_t currentMode = GetCurrentMode();
+    if ( !currentMode & SX126X_STATUS_MODE_RX ) {
+      SetRx(timeoutInMs);
     }
+    rv = ERR_NONE;
   }
 
   return rv;
@@ -205,11 +192,9 @@ void SX126x::ReceiveStatus(int8_t *rssiPacket, int8_t *snrPacket)
 
 void SX126x::Reset(void)
 {
-  delay(10);
-  digitalWrite(SX126x_RESET,0);
-  delay(20);
-  digitalWrite(SX126x_RESET,1);
-  delay(10);
+  digitalWrite(SX126x_RESET, LOW);
+  delayMicroseconds(600);
+  digitalWrite(SX126x_RESET, HIGH);
   while(digitalRead(SX126x_BUSY));
 }
 
@@ -227,6 +212,7 @@ void SX126x::Dio1Interrupt()
   {
     if ( irq & (SX126X_IRQ_TX_DONE | SX126X_IRQ_TIMEOUT) ) {
       txActive = false;
+      EnterDefaultMode();
     }
   }
 }
@@ -277,7 +263,7 @@ void SX126x::SetStandby(uint8_t mode)
 //----------------------------------------------------------------------------------------------------------------------------
 uint8_t SX126x::GetStatus(void)
 {
-  uint8_t rv;
+  uint8_t rv = 0x00;
   SPIreadCommand(SX126X_CMD_GET_STATUS, &rv, 1);
   return rv;
 }
@@ -313,14 +299,15 @@ void SX126x::WaitOnBusy( void )
 //  none
 //  
 //----------------------------------------------------------------------------------------------------------------------------
-void SX126x::SetDio3AsTcxoCtrl(uint8_t tcxoVoltage, uint32_t timeout)
+void SX126x::SetDio3AsTcxoCtrl(uint8_t tcxoVoltage, uint32_t timeoutInMs)
 {
     uint8_t buf[4];
+    uint32_t tout = timeoutInMs << 6;  // convert from ms to SX126x time base
 
     buf[0] = tcxoVoltage & 0x07;
-    buf[1] = ( uint8_t )( ( timeout >> 16 ) & 0xFF );
-    buf[2] = ( uint8_t )( ( timeout >> 8 ) & 0xFF );
-    buf[3] = ( uint8_t )( timeout & 0xFF );
+    buf[1] = ( uint8_t )( ( tout >> 16 ) & 0xFF );
+    buf[2] = ( uint8_t )( ( tout >> 8 ) & 0xFF );
+    buf[3] = ( uint8_t )( tout & 0xFF );
 
     SPIwriteCommand(SX126X_CMD_SET_DIO3_AS_TCXO_CTRL, buf, 4);
 }
@@ -404,7 +391,7 @@ void SX126x::CalibrateImage(uint32_t frequency)
 {
   uint8_t calFreq[2];
 
-  if( frequency> 900000000 )
+  if( frequency > 900000000 )
   {
       calFreq[0] = SX126X_CAL_IMG_902_MHZ_1;
       calFreq[1] = SX126X_CAL_IMG_902_MHZ_2;
@@ -699,6 +686,40 @@ void SX126x::ClearIrqStatus(uint16_t irq)
 }
 
 
+uint16_t SX126x::GetDeviceErrors(void) {
+  uint8_t data[2];
+  SPIreadCommand(SX126X_CMD_GET_DEVICE_ERRORS, data, 2);
+  return (data[0] << 8) | data[1];
+}
+
+
+void SX126x::EnterDefaultMode(void) 
+{
+  switch(DefaultMode) {
+    case(SX126X_DEFAULT_MODE_STBY_XOSC):
+      SetStandby(SX126X_STANDBY_XOSC);
+      break;
+
+    case(SX126X_DEFAULT_MODE_FS):
+      SetFs();
+      break;
+
+    case(SX126X_DEFAULT_MODE_RX_CONTINUOUS):
+      SetRx(SX126X_RX_NO_TIMEOUT_CONT);
+      break;
+
+    case(SX126X_DEFAULT_MODE_RX_SINGLE):
+      SetRx(SX126X_RX_NO_TIMEOUT_SINGLE);
+      break;
+
+    case(SX126X_DEFAULT_MODE_STBY_RC):
+    default:
+      SetStandby(SX126X_STANDBY_RC);
+      break;
+  }
+}
+
+
 //----------------------------------------------------------------------------------------------------------------------------
 //  The command...
 //
@@ -710,18 +731,22 @@ void SX126x::ClearIrqStatus(uint16_t irq)
 //  none
 //  
 //----------------------------------------------------------------------------------------------------------------------------
-void SX126x::SetRx(uint32_t timeout)
+void SX126x::SetRx(uint32_t timeoutInMs)
 {
-	SetDioIrqParams(SX126X_IRQ_ALL,  		//all interrupts enabled
-                  (SX126X_IRQ_RX_DONE), 	//interrupts on DIO1
-                  SX126X_IRQ_NONE,  		//interrupts on DIO2
-                  SX126X_IRQ_NONE); 		//interrupts on DIO3
-				  
-    uint8_t buf[3];
+    uint32_t tout = 0;
+    if ( timeoutInMs >= SX126X_RX_NO_TIMEOUT_CONT ) 
+    {
+      tout = SX126X_RX_NO_TIMEOUT_CONT;
+    }
+    else if (timeoutInMs > 0)
+    {
+      uint32_t tout = timeoutInMs << 6;  // convert from ms to SX126x time base
+    }
 
-    buf[0] = (uint8_t)((timeout >> 16) & 0xFF);
-    buf[1] = (uint8_t)((timeout >> 8) & 0xFF);
-    buf[2] = (uint8_t )(timeout & 0xFF);
+    uint8_t buf[3];
+    buf[0] = (uint8_t)((tout >> 16) & 0xFF);
+    buf[1] = (uint8_t)((tout >> 8) & 0xFF);
+    buf[2] = (uint8_t )(tout & 0xFF);
     SPIwriteCommand(SX126X_CMD_SET_RX, buf, 3);
 }
 
@@ -730,7 +755,8 @@ void SX126x::SetRx(uint32_t timeout)
 //  The command SetTx() sets the device in transmit mode. When the last bit of the packet has been sent, an IRQ TX_DONE
 //  is generated. A TIMEOUT IRQ is triggered if the TX_DONE IRQ is not generated within the given timeout period.
 //  The chip goes back to STBY_RC mode after a TIMEOUT IRQ or a TX_DONE IRQ.
-//  he timeout duration can be computed with the formula: Timeout duration = Timeout * 15.625 μs
+//  The timeout duration can be computed with the formula: Timeout duration = Timeout * 15.625 μs 
+//  The Timeout duration is expected in ms, so the desired formula becomes tout = timeoutInMs << 6
 //
 //  Parameters:
 //  0: Timeout disable, Tx Single mode, the device will stay in TX Mode until the packet is transmitted
@@ -744,12 +770,23 @@ void SX126x::SetRx(uint32_t timeout)
 //----------------------------------------------------------------------------------------------------------------------------
 void SX126x::SetTx(uint32_t timeoutInMs)
 {  
+    uint32_t tout = 0;
+    if (timeoutInMs > 0) 
+    {
+      timeoutInMs << 6;  // convert from ms to SX126x time base
+    }
     uint8_t buf[3];
-    uint32_t tout = (uint32_t)(timeoutInMs / 0.015625);
     buf[0] = (uint8_t)((tout >> 16) & 0xFF);
     buf[1] = (uint8_t)((tout >> 8) & 0xFF);
     buf[2] = (uint8_t) (tout & 0xFF);
     SPIwriteCommand(SX126X_CMD_SET_TX, buf, 3);
+}
+
+
+void SX126x::SetFs(void) 
+{
+  uint8_t buf = 0;
+  SPIwriteCommand(SX126X_CMD_SET_FS, buf, 0);
 }
 
 

@@ -23,6 +23,7 @@
 #define ERR_INVALID_OUTPUT_POWER        15
 #define ERR_INVALID_MODE                16
 #define ERR_DEVICE_BUSY                 17
+#define ERR_UNSUPPORTED_MODE            18
 
 // SX126X physical layer properties
 #define XTAL_FREQ                       ( double )32000000
@@ -139,20 +140,14 @@
 #define SX126X_REGULATOR_DC_DC                        0x01        //  7     0                         DC-DC
 
 //SX126X_CMD_CALIBRATE
-#define SX126X_CALIBRATE_IMAGE_OFF                    0b00000000  //  6     6     image calibration: disabled
-#define SX126X_CALIBRATE_IMAGE_ON                     0b01000000  //  6     6                        enabled
-#define SX126X_CALIBRATE_ADC_BULK_P_OFF               0b00000000  //  5     5     ADC bulk P calibration: disabled
-#define SX126X_CALIBRATE_ADC_BULK_P_ON                0b00100000  //  5     5                             enabled
-#define SX126X_CALIBRATE_ADC_BULK_N_OFF               0b00000000  //  4     4     ADC bulk N calibration: disabled
-#define SX126X_CALIBRATE_ADC_BULK_N_ON                0b00010000  //  4     4                             enabled
-#define SX126X_CALIBRATE_ADC_PULSE_OFF                0b00000000  //  3     3     ADC pulse calibration: disabled
-#define SX126X_CALIBRATE_ADC_PULSE_ON                 0b00001000  //  3     3                            enabled
-#define SX126X_CALIBRATE_PLL_OFF                      0b00000000  //  2     2     PLL calibration: disabled
-#define SX126X_CALIBRATE_PLL_ON                       0b00000100  //  2     2                      enabled
-#define SX126X_CALIBRATE_RC13M_OFF                    0b00000000  //  1     1     13 MHz RC osc. calibration: disabled
-#define SX126X_CALIBRATE_RC13M_ON                     0b00000010  //  1     1                                 enabled
-#define SX126X_CALIBRATE_RC64K_OFF                    0b00000000  //  0     0     64 kHz RC osc. calibration: disabled
-#define SX126X_CALIBRATE_RC64K_ON                     0b00000001  //  0     0                                 enabled
+#define SX126X_CALIBRATE_IMAGE_ON                     0b01000000  //  6     6     Image calibration: enabled
+#define SX126X_CALIBRATE_ADC_BULK_P_ON                0b00100000  //  5     5     ADC bulk P calibration: enabled
+#define SX126X_CALIBRATE_ADC_BULK_N_ON                0b00010000  //  4     4     ADC bulk N calibration: enabled
+#define SX126X_CALIBRATE_ADC_PULSE_ON                 0b00001000  //  3     3     ADC pulse calibration: enabled
+#define SX126X_CALIBRATE_PLL_ON                       0b00000100  //  2     2     PLL calibration: enabled
+#define SX126X_CALIBRATE_RC13M_ON                     0b00000010  //  1     1     13 MHz RC osc. calibration: enabled
+#define SX126X_CALIBRATE_RC64K_ON                     0b00000001  //  0     0     64 kHz RC osc. calibration: enabled
+#define SX126X_CALIBRATE_ALL_BLOCKS                   0b01111111  //              All blocks calibration: enabled
 
 //SX126X_CMD_CALIBRATE_IMAGE
 #define SX126X_CAL_IMG_430_MHZ_1                      0x6B
@@ -205,7 +200,7 @@
 #define SX126X_DIO3_OUTPUT_3_3                        0x07        //  7     0                                   3.3 V
 
 //Radio complete Wake-up Time with TCXO stabilisation time
-#define RADIO_TCXO_SETUP_TIME                         5 // [ms]
+#define RADIO_TCXO_SETUP_TIME                         5           // [ms]
 
 //SX126X_CMD_SET_PACKET_TYPE
 #define SX126X_PACKET_TYPE_GFSK                       0x00        //  7     0     packet type: GFSK
@@ -336,9 +331,12 @@
 #define SX126X_SYNC_WORD_PUBLIC                       0x3444
 #define SX126X_SYNC_WORD_PRIVATE                      0x1424
 
-//SX1216X TX OPERATION MODE
-#define SX126X_TXMODE_ASYNC                           0x01
-#define SX126X_TXMODE_SYNC                            0x02
+//SX1216X DEFAULT OPERATION MODE                                  // Mode returned to after completion of TX or RX
+#define SX126X_DEFAULT_MODE_STBY_RC                   0x01        // Return to Standby RC
+#define SX126X_DEFAULT_MODE_STBY_XOSC                 0x02        // Return to Standby XOSC
+#define SX126X_DEFAULT_MODE_FS                        0x03        // Return to Frequency Synthesis
+#define SX126X_DEFAULT_MODE_RX_CONTINUOUS             0x04        // Return to Continuous RX
+#define SX126X_DEFAULT_MODE_RX_SINGLE                 0x05        // Return to RX Single packet then return to STBY_RC
 
 //DIO1 ISR HOOK
 static void (*__dio1Hook)(void);
@@ -349,23 +347,24 @@ class SX126x {
   public:
     SX126x(int spiSelect, int reset, int busy);
 
-    int16_t   begin(uint8_t packetType, uint32_t frequencyInHz, int8_t txPowerInDbm);
-    int16_t   LoRaConfig(uint8_t spreadingFactor, uint8_t bandwidth, uint8_t codingRate, uint16_t preambleLength, uint8_t payloadLen, bool crcOn, bool invertIrq);
+    uint8_t   ModuleConfig(uint8_t packetType, uint32_t frequencyInHz, int8_t txPowerInDbm, uint8_t defaultMode = SX126X_DEFAULT_MODE_RX_CONTINUOUS);
+    uint8_t   LoRaBegin(uint8_t spreadingFactor, uint8_t bandwidth, uint8_t codingRate, uint16_t preambleLength, uint8_t payloadLen, bool crcOn, bool invertIrq);
     uint8_t   Receive(uint8_t *pData, uint16_t len);
     uint8_t   Send(uint8_t *pData, uint8_t len, uint32_t timeoutInMs = 0);
     uint8_t   SendAsync(uint8_t *pData, uint8_t len, uint32_t timeoutInMs = 0);
     uint8_t   GetCurrentMode(void);
-    bool      ReceiveMode(void);
+    uint8_t   ReceiveMode(uint32_t timeoutInMs);
     void      ReceiveStatus(int8_t *rssiPacket, int8_t *snrPacket);
     void      SetTxPower(int8_t txPowerInDbm);
     void      Dio1Interrupt(void);
-
+    uint16_t  GetDeviceErrors(void);
 
   private:
     static    SPISettings SX126X_SPI_SETTINGS;
     volatile  bool        txActive;
 
     uint8_t   PacketParams[6];
+    uint8_t   DefaultMode;
 
     int       SX126x_SPI_SELECT;
     int       SX126x_RESET;
@@ -375,7 +374,7 @@ class SX126x {
     void      SPIreadCommand(uint8_t cmd, uint8_t* data, uint8_t numBytes, bool waitForBusy = true);
     void      SPItransfer(uint8_t cmd, bool write, uint8_t* dataOut, uint8_t* dataIn, uint8_t numBytes, bool waitForBusy);
 
-    void      SetDio3AsTcxoCtrl(uint8_t tcxoVoltage, uint32_t timeout);
+    void      SetDio3AsTcxoCtrl(uint8_t tcxoVoltage, uint32_t timeoutInMs);
     void      SetDio2AsRfSwitchCtrl(uint8_t enable);
     void      Reset(void);
     void      SetStandby(uint8_t mode);
@@ -395,8 +394,10 @@ class SX126x {
     void      SetModulationParams(uint8_t spreadingFactor, uint8_t bandwidth, uint8_t codingRate, uint8_t lowDataRateOptimize);
     uint16_t  GetIrqStatus(void);
     void      ClearIrqStatus(uint16_t irq);
-    void      SetRx(uint32_t timeout);
+    void      EnterDefaultMode(void);
+    void      SetRx(uint32_t timeoutInMs);
     void      SetTx(uint32_t timeoutInMs);
+    void      SetFs(void);
     void      GetRxBufferStatus(uint8_t *payloadLength, uint8_t *rxStartBufferPointer);
     void      Wakeup(void);
     uint8_t   GetStatus(void);
