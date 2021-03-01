@@ -1,5 +1,7 @@
 #include "SX126x.h"
 
+SX126x* SX126x::module1_ptr = nullptr;
+SX126x* SX126x::module2_ptr = nullptr;
 
 void SX126x::DIO1_ISR_1(void) 
 {

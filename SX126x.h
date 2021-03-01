@@ -353,8 +353,8 @@ class SX126x {
   static void DIO1_ISR_1(void);
   static void DIO1_ISR_2(void);
 
-  static SX126x* module1_ptr = nullptr;
-  static SX126x* module2_ptr = nullptr;
+  static SX126x* module1_ptr;
+  static SX126x* module2_ptr;
 
   public:
     SX126x(int spiSelect, int reset, int busy, int interrupt);   
