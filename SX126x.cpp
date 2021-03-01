@@ -53,7 +53,7 @@ uint8_t SX126x::ModuleConfig(uint8_t packetType, uint32_t frequencyInHz, int8_t 
   SetStandby(SX126X_STANDBY_RC); 
   SetBufferBaseAddress(0, 0);
   SetPaConfig(0x04, 0x07, 0x00, 0x01);
-  SetPowerConfig(txPowerInDbm, SX126X_PA_RAMP_1700U);
+  SetPowerConfig(txPowerInDbm, SX126X_PA_RAMP_3400U);
   SetRfFrequency(frequencyInHz);
 
   return ERR_NONE;
@@ -62,7 +62,19 @@ uint8_t SX126x::ModuleConfig(uint8_t packetType, uint32_t frequencyInHz, int8_t 
 
 uint8_t SX126x::LoRaBegin(uint8_t spreadingFactor, uint8_t bandwidth, uint8_t codingRate, uint16_t preambleLength, uint8_t headerMode, bool crcOn, bool invertIrq) 
 {
-  uint8_t ldro = SX126X_LORA_LOW_DATA_RATE_OPTIMIZE_ON; //LowDataRateOptimize
+
+  uint16_t chipsPerSymbol = pow( 2.0, spreadingFactor );
+  SymbolRate = ((float)SX126X_LORA_BANDWIDTHS[bandwidth]) / ((float)chipsPerSymbol);
+
+  //Serial.println("SX126x: SymbolRate: " + String(SymbolRate) + "bps");
+
+  uint8_t ldro = SX126X_LORA_LOW_DATA_RATE_OPTIMIZE_OFF; //LowDataRateOptimize
+  if ( 1.0/SymbolRate > SX126X_LORA_LOW_DATA_RATE_OPTIMIZE_THRESH )
+  {
+    //Serial.println("SX126x: Enabling Low Data Rate Optimize");
+    ldro = SX126X_LORA_LOW_DATA_RATE_OPTIMIZE_ON; //LowDataRateOptimize
+  }
+  
 
   SetStopRxTimerOnPreambleDetect(false);
   SetLoRaSymbNumTimeout(0);

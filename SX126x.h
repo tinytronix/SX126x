@@ -24,6 +24,7 @@
 #define ERR_INVALID_MODE                16
 #define ERR_DEVICE_BUSY                 17
 #define ERR_UNSUPPORTED_MODE            18
+#define ERR_CALIBRATION_FAILED          19
 
 // SX126X physical layer properties
 #define XTAL_FREQ                       ( double )32000000
@@ -259,6 +260,7 @@
 #define SX126X_LORA_CR_4_8                            0x04        //  7     0                       4/8
 #define SX126X_LORA_LOW_DATA_RATE_OPTIMIZE_OFF        0x00        //  7     0     LoRa low data rate optimization: disabled
 #define SX126X_LORA_LOW_DATA_RATE_OPTIMIZE_ON         0x01        //  7     0                                      enabled
+#define SX126X_LORA_LOW_DATA_RATE_OPTIMIZE_THRESH     0.01638     //  ldro is recommended with at or above 16.38ms symbol times
 
 //SX126X_CMD_SET_PACKET_PARAMS
 #define SX126X_GFSK_PREAMBLE_DETECT_OFF               0x00        //  7     0     GFSK minimum preamble length before reception starts: detector disabled
@@ -338,8 +340,8 @@
 #define SX126X_DEFAULT_MODE_RX_CONTINUOUS             0x04        // Return to Continuous RX
 #define SX126X_DEFAULT_MODE_RX_SINGLE                 0x05        // Return to RX Single packet then return to STBY_RC
 
-//DIO1 ISR HOOK
-static void (*__dio1Hook)(void);
+//SX126X LORA Bandwidths
+const uint32_t SX126X_LORA_BANDWIDTHS[11] = { 7810, 15630, 31250, 62500, 125000, 250000, 500000, 0, 10420, 20830, 416700 };
 
 
 // interface class
@@ -365,6 +367,7 @@ class SX126x {
 
     uint8_t   PacketParams[6];
     uint8_t   DefaultMode;
+    float     SymbolRate;
 
     int       SX126x_SPI_SELECT;
     int       SX126x_RESET;
