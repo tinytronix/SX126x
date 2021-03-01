@@ -343,11 +343,21 @@
 //SX126X LORA Bandwidths
 const uint32_t SX126X_LORA_BANDWIDTHS[11] = { 7810, 15630, 31250, 62500, 125000, 250000, 500000, 0, 10420, 20830, 416700 };
 
+// Static DIO ISRs
 
-// interface class
+
+
+// Interface class
 class SX126x {
+
+  static void DIO1_ISR_1(void);
+  static void DIO1_ISR_2(void);
+
+  static SX126x* module1_ptr = nullptr;
+  static SX126x* module2_ptr = nullptr;
+
   public:
-    SX126x(int spiSelect, int reset, int busy);
+    SX126x(int spiSelect, int reset, int busy, int interrupt);   
 
     uint8_t   ModuleConfig(uint8_t packetType, uint32_t frequencyInHz, int8_t txPowerInDbm, uint8_t defaultMode = SX126X_DEFAULT_MODE_RX_CONTINUOUS);
     uint8_t   LoRaBegin(uint8_t spreadingFactor, uint8_t bandwidth, uint8_t codingRate, uint16_t preambleLength, uint8_t payloadLen, bool crcOn, bool invertIrq);
@@ -361,6 +371,7 @@ class SX126x {
     void      Dio1Interrupt(void);
     uint16_t  GetDeviceErrors(void);
 
+
   private:
     static    SPISettings SX126X_SPI_SETTINGS;
     volatile  bool        txActive;
@@ -372,6 +383,7 @@ class SX126x {
     int       SX126x_SPI_SELECT;
     int       SX126x_RESET;
     int       SX126x_BUSY;
+    int       SX126x_INT0;
 
     void      SPIwriteCommand(uint8_t cmd, uint8_t* data, uint8_t numBytes, bool waitForBusy = true);
     void      SPIreadCommand(uint8_t cmd, uint8_t* data, uint8_t numBytes, bool waitForBusy = true);

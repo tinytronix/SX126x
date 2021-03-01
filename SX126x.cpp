@@ -1,17 +1,31 @@
 #include "SX126x.h"
 
+
+void SX126x::DIO1_ISR_1(void) 
+{
+  module1_ptr->Dio1Interrupt();
+}
+
+void SX126x::DIO1_ISR_2(void) 
+{
+  module2_ptr->Dio1Interrupt();
+}
+
+
 SPISettings SX126x::SX126X_SPI_SETTINGS(8000000, MSBFIRST, SPI_MODE0);
 
-SX126x::SX126x(int spiSelect, int reset, int busy)
+SX126x::SX126x(int spiSelect, int reset, int busy, int interrupt)
 {
   SX126x_SPI_SELECT = spiSelect;
   SX126x_RESET      = reset;
   SX126x_BUSY       = busy;
+  SX126x_INT0       = interrupt;
   txActive          = false;
 
   pinMode(SX126x_SPI_SELECT, OUTPUT);
   pinMode(SX126x_RESET, OUTPUT);
   pinMode(SX126x_BUSY, INPUT);
+  pinMode(SX126x_INT0, INPUT);
 
   digitalWrite(SX126x_RESET, HIGH);
 
@@ -26,6 +40,18 @@ uint8_t SX126x::ModuleConfig(uint8_t packetType, uint32_t frequencyInHz, int8_t 
     txPowerInDbm = -3;
 
   DefaultMode = defaultMode;
+
+  if ( module1_ptr == nullptr ) {
+    module1_ptr = this;
+    attachInterrupt(digitalPinToInterrupt(SX126x_INT0), DIO1_ISR_1, RISING);
+  }
+  else if ( module2_ptr == nullptr ) {
+    module2_ptr = this;
+    attachInterrupt(digitalPinToInterrupt(SX126x_INT0), DIO1_ISR_2, RISING);
+  }
+  else {
+    Serial.println("SX126x: WARNING! This library only supports a max of 2 LoRa modules on a single host!");
+  }
   
   Reset();
   SetStandby(SX126X_STANDBY_RC);
