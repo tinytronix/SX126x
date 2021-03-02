@@ -5,31 +5,32 @@
 #include <SPI.h>
 
 //return values
-#define ERR_NONE                        0
-#define ERR_PACKET_TOO_LONG             1
-#define ERR_UNKNOWN                     2
-#define ERR_TX_TIMEOUT                  3
-#define ERR_RX_TIMEOUT                  4
-#define ERR_CRC_MISMATCH                5
-#define ERR_WRONG_MODEM                 6
-#define ERR_INVALID_BANDWIDTH           7
-#define ERR_INVALID_SPREADING_FACTOR    8
-#define ERR_INVALID_CODING_RATE         9
-#define ERR_INVALID_FREQUENCY_DEVIATION 10
-#define ERR_INVALID_BIT_RATE            11
-#define ERR_INVALID_RX_BANDWIDTH        12
-#define ERR_INVALID_DATA_SHAPING        13
-#define ERR_INVALID_SYNC_WORD           14
-#define ERR_INVALID_OUTPUT_POWER        15
-#define ERR_INVALID_MODE                16
-#define ERR_DEVICE_BUSY                 17
-#define ERR_UNSUPPORTED_MODE            18
-#define ERR_CALIBRATION_FAILED          19
+#define ERR_NONE                            0
+#define ERR_PACKET_TOO_LONG                 1
+#define ERR_UNKNOWN                         2
+#define ERR_TX_TIMEOUT                      3
+#define ERR_RX_TIMEOUT                      4
+#define ERR_CRC_MISMATCH                    5
+#define ERR_WRONG_MODEM                     6
+#define ERR_INVALID_BANDWIDTH               7
+#define ERR_INVALID_SPREADING_FACTOR        8
+#define ERR_INVALID_CODING_RATE             9
+#define ERR_INVALID_FREQUENCY_DEVIATION     10
+#define ERR_INVALID_BIT_RATE                11
+#define ERR_INVALID_RX_BANDWIDTH            12
+#define ERR_INVALID_DATA_SHAPING            13
+#define ERR_INVALID_SYNC_WORD               14
+#define ERR_INVALID_OUTPUT_POWER            15
+#define ERR_INVALID_MODE                    16
+#define ERR_DEVICE_BUSY                     17
+#define ERR_UNSUPPORTED_MODE                18
+#define ERR_CALIBRATION_FAILED              19
 
 // SX126X physical layer properties
-#define XTAL_FREQ                       ( double )32000000
-#define FREQ_DIV                        ( double )pow( 2.0, 25.0 )
-#define FREQ_STEP                       ( double )( XTAL_FREQ / FREQ_DIV )
+#define SX126X_XTAL_FREQ                    ( double )32000000
+#define SX126X_FREQ_DIV                     ( double )pow( 2.0, 25.0 )
+#define SX126X_FREQ_STEP                    ( double )( SX126X_XTAL_FREQ / SX126X_FREQ_DIV )
+#define SX126X_BUFFER_SIZE                  256
 
 // SX126X SPI commands
 // operational modes commands
@@ -361,18 +362,22 @@ class SX126x {
 
     uint8_t   ModuleConfig(uint8_t packetType, uint32_t frequencyInHz, int8_t txPowerInDbm, uint8_t defaultMode = SX126X_DEFAULT_MODE_RX_CONTINUOUS);
     uint8_t   LoRaBegin(uint8_t spreadingFactor, uint8_t bandwidth, uint8_t codingRate, uint16_t preambleLength, uint8_t payloadLen, bool crcOn, bool invertIrq);
-    uint8_t   Receive(uint8_t *pData, uint16_t len);
-    uint8_t   Send(uint8_t *pData, uint8_t len, uint32_t timeoutInMs = 0);
-    uint8_t   SendAsync(uint8_t *pData, uint8_t len, uint32_t timeoutInMs = 0);
+    uint8_t   Receive(uint8_t *pData, uint16_t *len);
+    uint8_t   Send(uint8_t *pData, uint16_t len, uint32_t timeoutInMs = 0);
+    uint8_t   SendAsync(uint8_t *pData, uint16_t len, uint32_t timeoutInMs = 0);
     uint8_t   GetCurrentMode(void);
     uint8_t   ReceiveMode(uint32_t timeoutInMs);
     void      ReceiveStatus(int8_t *rssiPacket, int8_t *snrPacket);
     void      SetTxPower(int8_t txPowerInDbm);
     void      Dio1Interrupt(void);
     uint16_t  GetDeviceErrors(void);
+    void      setTxDoneHook(void (*txHook)(uint8_t txStatus));
+    void      setRxDoneHook(void (*rxHook)(uint8_t rxStatus, uint8_t *pdata, uint16_t len));
 
 
   private:
+    void      (*__txDoneHook)(uint8_t txStatus);
+    void      (*__rxDoneHook)(uint8_t rxStatus, uint8_t *pdata, uint16_t len);
     static    SPISettings SX126X_SPI_SETTINGS;
     volatile  bool        txActive;
 
@@ -416,8 +421,8 @@ class SX126x {
     void      GetRxBufferStatus(uint8_t *payloadLength, uint8_t *rxStartBufferPointer);
     void      Wakeup(void);
     uint8_t   GetStatus(void);
-    uint8_t   ReadBuffer(uint8_t *rxData, uint8_t *rxDataLen,  uint8_t maxLen);
-    uint8_t   WriteBuffer(uint8_t *txData, uint8_t txDataLen);
+    uint8_t   ReadBuffer(uint8_t *rxData, uint16_t *rxDataLen);
+    uint8_t   WriteBuffer(uint8_t *txData, uint16_t txDataLen);
 };
 
 #endif

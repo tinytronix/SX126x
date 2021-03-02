@@ -135,27 +135,28 @@ uint8_t SX126x::LoRaBegin(uint8_t spreadingFactor, uint8_t bandwidth, uint8_t co
 }
 
 
-uint8_t SX126x::Receive(uint8_t *pData, uint16_t len) 
+uint8_t SX126x::Receive(uint8_t *pData, uint16_t *len) 
 {
-  uint8_t rxLen = 0;
-  uint16_t irqRegs = GetIrqStatus();
+  uint8_t rv = ERR_NONE;
+  uint16_t irq = GetIrqStatus();
   
-  if( irqRegs & SX126X_IRQ_RX_DONE )
+  if( irq & SX126X_IRQ_RX_DONE )
   {
     ClearIrqStatus(SX126X_IRQ_RX_DONE | SX126X_IRQ_TIMEOUT);
-    ReadBuffer(pData, &rxLen, len);
+    rv = ReadBuffer(pData, len);
+  }
+  else if ( irq & SX126X_IRQ_TIMEOUT) {
+    rv = ERR_RX_TIMEOUT;
   }
   
-  return rxLen;
+  return rv;
 }
 
 
-uint8_t SX126x::Send(uint8_t *pData, uint8_t len, uint32_t timeoutInMs)
+uint8_t SX126x::Send(uint8_t *pData, uint16_t len, uint32_t timeoutInMs)
 {
   uint16_t irq;
-  bool rv = ERR_UNKNOWN;
-
-  rv = SendAsync(pData, len, timeoutInMs);
+  bool rv = SendAsync(pData, len, timeoutInMs);
 
   if ( rv == ERR_NONE ) 
   {
@@ -173,24 +174,21 @@ uint8_t SX126x::Send(uint8_t *pData, uint8_t len, uint32_t timeoutInMs)
 }
 
 
-uint8_t SX126x::SendAsync(uint8_t *pData, uint8_t len, uint32_t timeoutInMs) 
+uint8_t SX126x::SendAsync(uint8_t *pData, uint16_t len, uint32_t timeoutInMs) 
 {
-  bool rv = ERR_UNKNOWN;
+  bool rv = ERR_NONE;
 
   if ( txActive ) {
     rv = ERR_DEVICE_BUSY;
   }
   else 
   {
-    ClearIrqStatus(SX126X_IRQ_TX_DONE | SX126X_IRQ_TIMEOUT);
-	  
-	  PacketParams[3] = len;
+    PacketParams[3] = len;
 	  SPIwriteCommand(SX126X_CMD_SET_PACKET_PARAMS, PacketParams, 6);
 
-    WriteBuffer(pData, len);
+    rv = WriteBuffer(pData, len);
 	  SetTx(timeoutInMs);
-    
-    rv = ERR_NONE;
+
     txActive = true;
   }
 
@@ -200,7 +198,7 @@ uint8_t SX126x::SendAsync(uint8_t *pData, uint8_t len, uint32_t timeoutInMs)
 
 uint8_t SX126x::ReceiveMode(uint32_t timeoutInMs)
 {
-  uint8_t rv = ERR_UNKNOWN;
+  uint8_t rv = ERR_NONE;
 
   if ( txActive == true )
   {
@@ -212,7 +210,6 @@ uint8_t SX126x::ReceiveMode(uint32_t timeoutInMs)
     if ( !currentMode & SX126X_STATUS_MODE_RX ) {
       SetRx(timeoutInMs);
     }
-    rv = ERR_NONE;
   }
 
   return rv;
@@ -245,14 +242,41 @@ void SX126x::Wakeup(void)
 }
 
 
+void SX126x::setTxDoneHook(void (*txHook)(uint8_t txStatus)) {
+  __txDoneHook = txHook;
+}
+
+
+void SX126x::setRxDoneHook(void (*rxHook)(uint8_t rxStatus, uint8_t *pdata, uint16_t len)) {
+  __rxDoneHook = rxHook;
+}
+
+
 void SX126x::Dio1Interrupt() 
 {
   uint16_t irq = GetIrqStatus();
   if( txActive ) 
   {
-    if ( irq & (SX126X_IRQ_TX_DONE | SX126X_IRQ_TIMEOUT) ) {
+    if ( irq & (SX126X_IRQ_TX_DONE | SX126X_IRQ_TIMEOUT) ) 
+    {
       txActive = false;
       EnterDefaultMode();
+
+      if ( __txDoneHook != nullptr ) 
+      {
+        __txDoneHook((irq & SX126X_IRQ_TIMEOUT) ? ERR_TX_TIMEOUT : ERR_NONE);
+      }
+    }
+  }
+  else if ( irq & (SX126X_IRQ_RX_DONE | SX126X_IRQ_TIMEOUT) ) 
+  {
+    if ( __rxDoneHook != nullptr ) 
+    {
+      uint16_t len = SX126X_BUFFER_SIZE;
+      uint8_t* pRxData = new uint8_t[len];
+      uint8_t rxStatus = Receive(pRxData, &len);
+      __rxDoneHook(rxStatus, pRxData, len);
+      free(pRxData);
     }
   }
 }
@@ -407,7 +431,7 @@ void SX126x::SetRfFrequency(uint32_t frequency)
 
   CalibrateImage(frequency);
 
-  freq = (uint32_t)((double)frequency / (double)FREQ_STEP);
+  freq = (uint32_t)((double)frequency / (double)SX126X_FREQ_STEP);
   buf[0] = (uint8_t)((freq >> 24) & 0xFF);
   buf[1] = (uint8_t)((freq >> 16) & 0xFF);
   buf[2] = (uint8_t)((freq >> 8) & 0xFF);
@@ -773,21 +797,23 @@ void SX126x::EnterDefaultMode(void)
 //----------------------------------------------------------------------------------------------------------------------------
 void SX126x::SetRx(uint32_t timeoutInMs)
 {
-    uint32_t tout = 0;
-    if ( timeoutInMs >= SX126X_RX_NO_TIMEOUT_CONT ) 
-    {
-      tout = SX126X_RX_NO_TIMEOUT_CONT;
-    }
-    else if (timeoutInMs > 0)
-    {
-      uint32_t tout = timeoutInMs << 6;  // convert from ms to SX126x time base
-    }
+  ClearIrqStatus(SX126X_IRQ_RX_DONE | SX126X_IRQ_TIMEOUT);
 
-    uint8_t buf[3];
-    buf[0] = (uint8_t)((tout >> 16) & 0xFF);
-    buf[1] = (uint8_t)((tout >> 8) & 0xFF);
-    buf[2] = (uint8_t )(tout & 0xFF);
-    SPIwriteCommand(SX126X_CMD_SET_RX, buf, 3);
+  uint32_t tout = 0;
+  if ( timeoutInMs >= SX126X_RX_NO_TIMEOUT_CONT ) 
+  {
+    tout = SX126X_RX_NO_TIMEOUT_CONT;
+  }
+  else if (timeoutInMs > 0)
+  {
+    tout = timeoutInMs << 6;  // convert from ms to SX126x time base
+  }
+
+  uint8_t buf[3];
+  buf[0] = (uint8_t)((tout >> 16) & 0xFF);
+  buf[1] = (uint8_t)((tout >> 8) & 0xFF);
+  buf[2] = (uint8_t )(tout & 0xFF);
+  SPIwriteCommand(SX126X_CMD_SET_RX, buf, 3);
 }
 
 
@@ -810,23 +836,25 @@ void SX126x::SetRx(uint32_t timeoutInMs)
 //----------------------------------------------------------------------------------------------------------------------------
 void SX126x::SetTx(uint32_t timeoutInMs)
 {  
-    uint32_t tout = 0;
-    if (timeoutInMs > 0) 
-    {
-      timeoutInMs << 6;  // convert from ms to SX126x time base
-    }
-    uint8_t buf[3];
-    buf[0] = (uint8_t)((tout >> 16) & 0xFF);
-    buf[1] = (uint8_t)((tout >> 8) & 0xFF);
-    buf[2] = (uint8_t) (tout & 0xFF);
-    SPIwriteCommand(SX126X_CMD_SET_TX, buf, 3);
+  ClearIrqStatus(SX126X_IRQ_TX_DONE | SX126X_IRQ_TIMEOUT);
+
+  uint32_t tout = 0;
+  if (timeoutInMs > 0) 
+  {
+    tout = timeoutInMs << 6;  // convert from ms to SX126x time base
+  }
+  uint8_t buf[3];
+  buf[0] = (uint8_t)((tout >> 16) & 0xFF);
+  buf[1] = (uint8_t)((tout >> 8) & 0xFF);
+  buf[2] = (uint8_t) (tout & 0xFF);
+  SPIwriteCommand(SX126X_CMD_SET_TX, buf, 3);
 }
 
 
 void SX126x::SetFs(void) 
 {
   uint8_t buf = 0;
-  SPIwriteCommand(SX126X_CMD_SET_FS, buf, 0);
+  SPIwriteCommand(SX126X_CMD_SET_FS, &buf, 0);
 }
 
 
@@ -863,36 +891,38 @@ void SX126x::GetRxBufferStatus(uint8_t *payloadLength, uint8_t *rxStartBufferPoi
 //  none
 //  
 //----------------------------------------------------------------------------------------------------------------------------
-uint8_t SX126x::ReadBuffer(uint8_t *rxData, uint8_t *rxDataLen, uint8_t maxLen)
+uint8_t SX126x::ReadBuffer(uint8_t *rxData, uint16_t *rxDataLen)
 {
-    uint8_t offset = 0;
-    
-    GetRxBufferStatus(rxDataLen, &offset);
-    if( *rxDataLen > maxLen)
-    {
-        return 1;
-    }
-    
-    while(digitalRead(SX126x_BUSY));
-    
-    digitalWrite(SX126x_SPI_SELECT, LOW);
-    SPI.beginTransaction(SX126X_SPI_SETTINGS);
-    SPI.transfer(SX126X_CMD_READ_BUFFER);
-    SPI.transfer(offset);
-    SPI.transfer(SX126X_CMD_NOP);
-	  uint8_t byte = 0;
-    for( uint16_t i = 0; i < *rxDataLen; i++ )
-    {
-        byte = SPI.transfer(SX126X_CMD_NOP);
-		if( i < maxLen ) {
-			rxData[i] = byte;
-		}
-    }
-    digitalWrite(SX126x_SPI_SELECT, HIGH);
-    
-    while(digitalRead(SX126x_BUSY));
- 
-    return 0;
+  uint8_t rv = ERR_NONE;
+  uint8_t offset = 0;
+  uint8_t packetLen = 0;
+  
+  GetRxBufferStatus(&packetLen, &offset);
+  if( packetLen > *rxDataLen)
+  {
+    // Packet is to large to fit in supplied buffer, read what we can
+    rv = ERR_PACKET_TOO_LONG;
+  }
+  else {
+    *rxDataLen = packetLen;
+  }
+
+  while(digitalRead(SX126x_BUSY));
+  
+  digitalWrite(SX126x_SPI_SELECT, LOW);
+  SPI.beginTransaction(SX126X_SPI_SETTINGS);
+  SPI.transfer(SX126X_CMD_READ_BUFFER);
+  SPI.transfer(offset);
+  SPI.transfer(SX126X_CMD_NOP);
+  for( uint8_t i = 0; i < *rxDataLen; i++ )
+  {
+    rxData[i] = SPI.transfer(SX126X_CMD_NOP);
+  }
+  digitalWrite(SX126x_SPI_SELECT, HIGH);
+  
+  while(digitalRead(SX126x_BUSY));
+
+  return rv;
 }
 
 
@@ -907,27 +937,27 @@ uint8_t SX126x::ReadBuffer(uint8_t *rxData, uint8_t *rxDataLen, uint8_t maxLen)
 //  none
 //  
 //----------------------------------------------------------------------------------------------------------------------------
-uint8_t SX126x::WriteBuffer(uint8_t *txData, uint8_t txDataLen)
+uint8_t SX126x::WriteBuffer(uint8_t *txData, uint16_t txDataLen)
 {
-    //Serial.print("SPI write: CMD=0x");
-    //Serial.print(SX126X_CMD_WRITE_BUFFER, HEX);
-    //Serial.print(" DataOut: ");
-    digitalWrite(SX126x_SPI_SELECT, LOW);
-    SPI.beginTransaction(SX126X_SPI_SETTINGS);
-    SPI.transfer(SX126X_CMD_WRITE_BUFFER);
-    SPI.transfer(0); //offset in tx fifo
-    //Serial.print(" 0 ");
-    for( uint16_t i = 0; i < txDataLen; i++ )
-    { 
-      //Serial.print(txData[i]);
-      //Serial.print(" ");
-       SPI.transfer( txData[i]);  
-    }
-    digitalWrite(SX126x_SPI_SELECT, HIGH);
-    //Serial.println("");
-    while(digitalRead(SX126x_BUSY));
- 
-    return 0;
+  uint8_t rv = ERR_NONE;
+
+  if (txDataLen > SX126X_BUFFER_SIZE) {
+    rv = ERR_PACKET_TOO_LONG;
+  }
+
+  digitalWrite(SX126x_SPI_SELECT, LOW);
+  SPI.beginTransaction(SX126X_SPI_SETTINGS);
+  SPI.transfer(SX126X_CMD_WRITE_BUFFER);
+  SPI.transfer(0); //offset in tx fifo
+  for( uint16_t i = 0; i < txDataLen; i++ )
+  {
+      SPI.transfer(txData[i]);  
+  }
+  digitalWrite(SX126x_SPI_SELECT, HIGH);
+
+  while(digitalRead(SX126x_BUSY));
+
+  return rv;
 }
 
 
