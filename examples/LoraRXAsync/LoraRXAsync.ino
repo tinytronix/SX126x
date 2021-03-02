@@ -1,8 +1,8 @@
-/* LoraTX.ino
+/* LoraRXAsync.ino
  * 
- * A simple synchronus TX example.
+ * A simple Async RX example.
  */
- 
+
 #include <SX126x.h>
 
 #define RF_FREQUENCY                                915000000 // Hz  center frequency
@@ -31,7 +31,7 @@ void setup() {
   Serial.begin(9600);
   delay(500);
   Serial.println("Starting Up...");
-
+  
   uint8_t rv = lora.ModuleConfig(SX126X_PACKET_TYPE_LORA, RF_FREQUENCY, TX_OUTPUT_POWER);
 
   if ( rv == ERR_NONE ) {
@@ -44,34 +44,43 @@ void setup() {
       LORA_PACKET_CRC_ENABLE,
       LORA_IQ_INVERSION
     );
-    
+  
+    // Register your RX done hook with the driver
+    lora.setRxDoneHook(loraRxDone);
+  
     Serial.println("SX126x Initialized");
   }
   else {
-    Serial.print("Error Initializing SX126x: ");
+    Serial.print("Error Initializing SX126x: " );
     Serial.println(rv);
   }
 }
 
-uint16_t i = 0;
-uint8_t* data = new uint8_t[2];
-unsigned long startMillis = millis();
 
 void loop() {
-  data[0] = (i >> 8) & 0x00FF;
-  data[1] = i & 0x00FF;
-  startMillis = millis();
+  // Do work while the SX126x handles receiving!
+  delay(10);
+}
 
-  // Blocks until your message is sent
-  uint8_t res = lora.Send(data, 2);
 
-  unsigned long sendTime = millis()-startMillis;
-  Serial.print("Sent: ");
-  Serial.print(i);
-  Serial.print(" in ");
-  Serial.print(sendTime);
-  Serial.println(" ms ");
-  i++;
-
-  delay(1000);
+// Lora RX Done ISR
+void loraRxDone(uint8_t rxStatus, uint8_t* pRxData, uint16_t len) {
+  if ( rxStatus == ERR_NONE ) {
+    int8_t rssi, snr;
+    uint16_t val = ((uint16_t)pRxData[0]<<8)&0xFF00;
+    val |= ((uint16_t)pRxData[1])&0x00FF;
+    Serial.print("Received: ");
+    Serial.println(val);
+    Serial.print("Length: ");
+    Serial.println(len);
+    lora.ReceiveStatus(&rssi, &snr);
+    Serial.print("SNR: ");
+    Serial.println(snr, DEC);
+    Serial.print("RSSI: ");
+    Serial.println(rssi, DEC);
+  }
+  else {
+    Serial.print("Lora RX Error: ");
+    Serial.println(rxStatus);
+  }
 }

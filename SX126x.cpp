@@ -148,6 +148,10 @@ uint8_t SX126x::Receive(uint8_t *pData, uint16_t *len)
   else if ( irq & SX126X_IRQ_TIMEOUT) {
     rv = ERR_RX_TIMEOUT;
   }
+  else {
+    *len = 0;
+    rv = ERR_NONE;
+  }
   
   return rv;
 }

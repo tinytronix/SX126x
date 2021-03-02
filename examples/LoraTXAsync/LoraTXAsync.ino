@@ -1,6 +1,6 @@
-/* LoraTX.ino
+/* LoraTXAsync.ino
  * 
- * A simple synchronus TX example.
+ * A simple Async TX example.
  */
  
 #include <SX126x.h>
@@ -45,6 +45,9 @@ void setup() {
       LORA_IQ_INVERSION
     );
     
+    // Register your TX done hook with the driver if you want
+    lora.setTxDoneHook(loraTxDone);
+    
     Serial.println("SX126x Initialized");
   }
   else {
@@ -61,17 +64,21 @@ void loop() {
   data[0] = (i >> 8) & 0x00FF;
   data[1] = i & 0x00FF;
   startMillis = millis();
+  lora.SendAsync(data, 2);
+  
+  // Do work while SX126x sends your message!
+  delay(1000);
+}
 
-  // Blocks until your message is sent
-  uint8_t res = lora.Send(data, 2);
 
+// Lora TX Done ISR
+void loraTxDone(uint8_t txStatus) {
   unsigned long sendTime = millis()-startMillis;
   Serial.print("Sent: ");
   Serial.print(i);
   Serial.print(" in ");
   Serial.print(sendTime);
-  Serial.println(" ms ");
+  Serial.print(" ms ");
+  Serial.println(txStatus ? "with error(s)" : "successfully");
   i++;
-
-  delay(1000);
 }
