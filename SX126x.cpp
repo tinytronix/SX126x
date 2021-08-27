@@ -62,6 +62,7 @@ int16_t SX126x::begin(uint8_t packetType, uint32_t frequencyInHz, int8_t txPower
                   SX126X_IRQ_NONE); //interrupts on DIO3
 
   SetRfFrequency(frequencyInHz);
+  return ERR_NONE;
 }
 
 
@@ -105,6 +106,7 @@ int16_t SX126x::LoRaConfig(uint8_t spreadingFactor, uint8_t bandwidth, uint8_t c
                   SX126X_IRQ_NONE);
   //receive state no receive timeoout
   SetRx(0xFFFFFF);
+  return ERR_NONE;
 }
 
 
