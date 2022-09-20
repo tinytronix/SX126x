@@ -725,7 +725,7 @@ void SX126x::SetRx(uint32_t timeout)
 void SX126x::SetTx(uint32_t timeoutInMs)
 {
     uint8_t buf[3];
-    uint32_t tout = (uint32_t)(timeoutInMs * 0,015625);
+    uint32_t tout = (uint32_t)(timeoutInMs * 0.015625);
     buf[0] = (uint8_t)((tout >> 16) & 0xFF);
     buf[1] = (uint8_t)((tout >> 8) & 0xFF);
     buf[2] = (uint8_t )(tout & 0xFF);
